@@ -1,0 +1,22 @@
+{
+    "name": "deternitydx/testing",
+    "description": "Test Software",
+    "license": "Apache2",
+    "authors": [
+        {
+            "name": "Robbie Hott"
+        }
+    ],
+    "require": {
+        "php": "~7.0"
+    },
+    "require-dev": {
+        "phpdocumentor/phpdocumentor": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "manager\\": "src/"
+        }
+    }
+}
+

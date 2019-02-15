@@ -1,0 +1,6 @@
+*.lock
+vendor/
+*.pdf
+*.txt
+*.log
+src/Config.php

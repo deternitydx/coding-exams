@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Question View</title>
+
+<!-- JQuery -->
+<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+
+<!-- Helper Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.5/js/bootstrap-select.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.5/css/bootstrap-select.min.css">
+
+<!-- Select Upgrades -->
+<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.2-rc.1/css/select2.min.css" rel="stylesheet" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.2-rc.1/js/select2.min.js"></script>
+<link rel="stylesheet" href="css/select2-bootstrap.min.css">
+
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="js/codemirror/lib/codemirror.css">
+<script src="js/codemirror/lib/codemirror.js"></script>
+<script src="js/codemirror/addon/edit/matchbrackets.js"></script>
+<link rel="stylesheet" href="js/codemirror/addon/hint/show-hint.css">
+<script src="js/codemirror/addon/hint/show-hint.js"></script>
+<script src="js/clike.js"></script>
+
+<meta charset="utf-8"/>
+<style>
+.CodeMirror {
+    height: 500px;
+}
+body {
+    margin-top: 70px;
+}
+</style>
+</head>
+
+<body role="document">
+{% from 'page_navigation.html' import topNavigation,footer %}
+{{ topNavigation() }}
+
+<div class="container" role="main">
+    <h1>{{data.title}}: {{user.name}} ({{user.uva_id}})</h1>
+
+
+<form id="questionform" method="post" action="?c=submit_exam">
+    <input type="hidden" name="e" value="{{data.id}}">
+    {% for question in data.questions %}
+        <h3>Question</h3>    
+        <div>{{question.text|raw}}</div>
+        <input type="hidden" name="q[]" value="{{question.id}}">
+        <div style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #000">
+            <textarea name="response[]" style="width: 100%; height: 100%;">{{question.code}}</textarea>
+        </div>
+    {% endfor %}
+    <div class="row" style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; margin-top: 10px; margin-bottom: 30px;">
+        <div class="col-md-8">
+            <div class="alert alert-01 alert-warning" id="notification-message" style="display: none">
+                <p></p>
+            </div><!-- end alert -->
+            <div class="alert alert-01 alert-success" id="success-message" style="display: none">
+                <p></p>
+            </div><!-- end alert -->
+            <div class="alert alert-01 alert-danger" id="error-message"  style="display: none">
+                <p></p>
+            </div><!-- end alert -->
+        </div>
+        <div class="col-md-4" style="text-align:right; ">
+            <button class="btn btn-primary" id="save">Save Progress</button>
+            <button class="btn btn-danger" id="submit">Submit Exam</button>
+        </div>
+    </div>
+</form>
+<script>
+      $("textarea").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              matchBrackets: true,
+              mode: "text/x-java"
+          });
+      });
+
+      function save() {
+            // Open up the warning alert box and note that we are saving
+            $('#notification-message').html("<p>Saving answer... Please wait.</p>");
+            $('#notification-message').slideDown();
+            
+          // Save any XML editor contents back to their text areas before saving
+          $("textarea").each(function() {
+              var obj = $(this);
+              if (obj.get(0).CodeMirror) {
+                  obj.get(0).CodeMirror.save();  
+              }
+          });
+
+            // Send the data back by AJAX call
+            $.post("?c=save_exam", $("#questionform").serialize(), function (data) {
+                // Check the return value from the ajax. If success, then alert the
+                // user and make appropriate updates.
+                if (data.result == "success") {
+                    $('#notification-message').slideUp();
+                    // Show the success alert
+                    $('#success-message').html("<p>Saved successfully!</p>");
+                    setTimeout(function(){
+                        $('#success-message').slideDown();
+                    }, 1000);
+                    setTimeout(function(){
+                        $('#success-message').slideUp();
+                    }, 3000);
+                } else {
+                    $('#notification-message').slideUp();
+                    // Something went wrong in the ajax call. Show an error.
+                    console.log(data);
+                    $('#error-message').html("<p>Error: "+data.error+".  Please show your work to a TA.</p>");
+                    $('#error-message').slideDown();
+                }
+
+            });
+      }
+
+        $('#save').click(function(){
+            save();
+            return false;
+        });
+
+        $('#submit').click(function(){
+            javaEditor.save();
+            return true;
+        });
+
+
+
+
+    </script>
+{{ footer() }}
+</body>
+</html>
