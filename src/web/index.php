@@ -7,6 +7,19 @@ error_reporting(E_ALL);
 include("../../vendor/autoload.php");
 $helper = new \manager\control\Helper();
 
+// helper function for CSV
+if (!function_exists('str_putcsv')) {
+    function str_putcsv($input, $delimiter = ',', $enclosure = '"') {
+        $fp = fopen('php://temp', 'r+b');
+        fputcsv($fp, $input, $delimiter, $enclosure);
+        rewind($fp);
+        $data = rtrim(stream_get_contents($fp), "\n");
+        fclose($fp);
+        return $data;
+    }
+}
+
+
 $input = array();
 $in = array_merge($_POST, $_GET);
 foreach ($in as $k => $v) {
@@ -55,6 +68,9 @@ switch ($command) {
         break;
     case "save_grade_next":
         echo $helper->saveNextGrade();
+        break;
+    case "download":
+        echo $helper->downloadGrades();
         break;
     default:
         echo $helper->showHome();

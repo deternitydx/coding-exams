@@ -530,11 +530,12 @@ class Helper {
 
         $exams = [];
         $questions = [];
-        $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id from person_exam e, person u where e.exam_id = $1 and e.person_id = u.id;", [$eid]);
+        $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name from person_exam e, person u where e.exam_id = $1 and e.person_id = u.id;", [$eid]);
         $all = $this->db->fetchAll($res);
         foreach ($all as $exam) {
             $exams[$exam["person_id"]] = [
                 "uva_id" => $exam["uva_id"],
+                "name" => $exam["name"],
                 "date_taken" => $exam["date_taken"],
                 "date_started" => $exam["date_started"],
                 "code" => $exam["code"],
@@ -647,5 +648,95 @@ class Helper {
         }
 
         return $_FILES[$name]['tmp_name'];
+    }
+
+    public function downloadGrades() {
+        $results = $this->loadResults();
+        $info = $results["info"];
+        //$dir = Config::$TEMP_DIR . "/".$results["info"]["title"];
+        $zdir = $results["info"]["title"];
+        $zip = new \ZipArchive();
+        $zipname = Config::$TEMP_DIR . "/". $info["id"] .".zip";
+        $zip->open($zipname, \ZipArchive::CREATE);
+        $zip->addEmptyDir($zdir);
+
+        //if (mkdir($dir) === false)
+        //    die($this->showError("Could not create temp directory"));
+
+        $gradefile = [];
+        array_push($gradefile, [$info["title"], "Points"]); 
+        array_push($gradefile, []); 
+        array_push($gradefile, 
+            ["Display ID","ID","Last Name","First Name","grade","Submission date","Late submission"]
+        );
+
+        foreach ($results["exams"] as $exam) {
+            //$udir = "$dir/{$exam["name"]}({$exam["uva_id"]})";
+            $uzdir = "$zdir/{$exam["name"]}({$exam["uva_id"]})";
+            $zip->addEmptyDir($zdir);
+
+            //if (mkdir($udir) === false)
+            //    die($this->showError("Could not create temp directory"));
+
+            $response = "";
+            $comments = "";
+            $i = 1;
+            $score = 0;
+            foreach ($info["questions"] as $q) {
+                $response .= "<h3>Question $i<h3>\n";
+                $response .= $q["text"] . "<br>\n";
+                $response .= "<pre>".$exam["questions"][$q["id"]]["response"]."</pre>\n\n";
+
+                $comments .= "Question $i\n-----------\n";
+                $comments .= $exam["questions"][$q["id"]]["feedback"] . "\n";
+                $comments .= "Score: " . $exam["questions"][$q["id"]]["score"] ." / ".$q["score"]."\n\n";
+                
+                $score += $exam["questions"][$q["id"]]["score"];
+                $i++;
+            }
+            $comments .= "-------------------\nFinal Score: $score\n";
+            array_push($gradefile, [
+                $exam["uva_id"],
+                $exam["uva_id"],
+                "", // last name
+                "", // first name
+                round($score, 2), // grade
+                "", // submission date
+                "" // late submission
+            ]);
+
+            //file_put_contents("$udir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $response);
+            //file_put_contents("$udir/comments.txt", $comments);
+            $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $response);
+            $zip->addFromString("$uzdir/comments.txt", $comments);
+        }
+
+        // write the grades.csv file
+        //$fp = fopen("$dir/grades.csv", 'w');
+        //foreach ($gradefile as $fields) {
+        //    fputcsv($fp, $fields);
+        //}
+        //fclose($fp);
+        $gradefilecsv = "";
+        foreach ($gradefile as $fields) {
+            $gradefilecsv .= str_putcsv($fields) . "\n";
+        }
+        $zip->addFromString("$zdir/grades.csv", $gradefilecsv); 
+        
+        
+        // close zip for downloading
+        $zip->close();
+
+        // show ZIP file
+        header('Content-Type: application/zip');
+        header('Content-disposition: attachment; filename=bulk_download.zip');
+        header('Content-Length: ' . filesize($zipname));
+        $zipfile = file_get_contents($zipname); 
+        
+        // remove the zip from the local filesystem
+        unlink($zipname);
+
+        // return the contents of the zipfile
+        return $zipfile;
     }
 }
