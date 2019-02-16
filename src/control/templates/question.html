@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Question View</title>
+    <title>Exam View</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -40,6 +40,7 @@
 }
 body {
     margin-top: 70px;
+    margin-bottom: 70px;
 }
 </style>
 </head>
@@ -52,15 +53,18 @@ body {
     <h1>{{data.title}}: {{user.name}} ({{user.uva_id}})</h1>
 
 
-<form id="questionform" method="post" action="?c=submit_exam">
+<form id="questionform" name="questionform" method="post" action="?c=submit_exam">
     <input type="hidden" name="e" value="{{data.id}}">
+    <input type="hidden" name="uva_id" value="{{user.uva_id}}">
+    {% set i = 1%}
     {% for question in data.questions %}
-        <h3>Question</h3>    
+    <h3>Question {{i}}</h3>    
         <div>{{question.text|raw}}</div>
         <input type="hidden" name="q[]" value="{{question.id}}">
         <div style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #000">
             <textarea name="response[]" style="width: 100%; height: 100%;">{{question.code}}</textarea>
         </div>
+        {% set i = i + 1 %}
     {% endfor %}
     <div class="row" style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; margin-top: 10px; margin-bottom: 30px;">
         <div class="col-md-8">
@@ -76,11 +80,12 @@ body {
         </div>
         <div class="col-md-4" style="text-align:right; ">
             <button class="btn btn-primary" id="save">Save Progress</button>
-            <button class="btn btn-danger" id="submit">Submit Exam</button>
+            <button class="btn btn-danger" id="submitBtn">Submit Exam</button>
         </div>
     </div>
 </form>
 <script>
+      var submitting = false;
       $("textarea").each(function() {
           var obj = $(this);
           obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
@@ -92,11 +97,7 @@ body {
           });
       });
 
-      function save() {
-            // Open up the warning alert box and note that we are saving
-            $('#notification-message').html("<p>Saving answer... Please wait.</p>");
-            $('#notification-message').slideDown();
-            
+      function saveTextAreas() {
           // Save any XML editor contents back to their text areas before saving
           $("textarea").each(function() {
               var obj = $(this);
@@ -104,6 +105,14 @@ body {
                   obj.get(0).CodeMirror.save();  
               }
           });
+      }
+
+      function save() {
+            // Open up the warning alert box and note that we are saving
+            $('#notification-message').html("<p>Saving answer... Please wait.</p>");
+            $('#notification-message').slideDown();
+          
+            saveTextAreas();  
 
             // Send the data back by AJAX call
             $.post("?c=save_exam", $("#questionform").serialize(), function (data) {
@@ -123,7 +132,7 @@ body {
                     $('#notification-message').slideUp();
                     // Something went wrong in the ajax call. Show an error.
                     console.log(data);
-                    $('#error-message').html("<p>Error: "+data.error+".  Please show your work to a TA.</p>");
+                    $('#error-message').html("<p>Error: "+data.error+".  Please show your work to a TA before submitting.</p>");
                     $('#error-message').slideDown();
                 }
 
@@ -135,12 +144,29 @@ body {
             return false;
         });
 
-        $('#submit').click(function(){
-            javaEditor.save();
-            return true;
+        $('#submitBtn').click(function(){
+            submitting = true;
+            saveTextAreas();
+            if (confirm("Are you completely finished with the coding portion exam?  You may not return."))
+                document.questionform.submit();
+            else {
+                submitting = false;
+                return false;
+            }
         });
 
 
+        function unloadPage(e) {
+            if (!submitting) {
+                var message = 'You may have unsaved changes on this exam.  Are you sure you want to leave the page?';
+                var e = e || window.event;
+                // For IE and Firefox
+                if (e) { e.returnValue = message; }
+                // For Safari
+                return message;
+            }
+        }
+        window.onbeforeunload = unloadPage;
 
 
     </script>

@@ -5,6 +5,13 @@ ini_set("html_errors", 1);
 error_reporting(E_ALL);
 
 include("../../vendor/autoload.php");
+
+use \Monolog\Logger;
+use \Monolog\Handler\StreamHandler;
+// Set up the global log stream
+$loglevel = Logger::DEBUG;
+$log = new StreamHandler(\manager\Config::$LOG_FILE, $loglevel);
+
 $helper = new \manager\control\Helper();
 
 // helper function for CSV

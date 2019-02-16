@@ -8,7 +8,9 @@
         }
     ],
     "require": {
-        "php": "~7.0"
+        "php": "~7.0",
+        "twig/twig": "~1.23",
+        "monolog/monolog": "^1.18"
     },
     "require-dev": {
         "phpdocumentor/phpdocumentor": "*"

@@ -9,8 +9,13 @@ class Helper {
     private $db;
     private $user;
     private $input;
+    private $logger;
 
     public function __construct() {
+        global $log;
+        $this->logger = new \Monolog\Logger('Helper');
+        $this->logger->pushHandler($log);
+
         $this->dData = array();
         $this->db = new \manager\control\DatabaseConnector();
         if (!isset($_SERVER["uid"])) {
@@ -193,6 +198,7 @@ class Helper {
     }
 
     public function handleSubmitExam() {
+        $this->logger->addDebug("Submitting exam", $this->input);
         $saved = json_decode($this->handleSaveExam(), true);
         if ($saved["result"] != "success") {
             die($this->showError("An error occurred while saving the exam.  Please show this page to a TA.", $input));
@@ -683,9 +689,9 @@ class Helper {
             $i = 1;
             $score = 0;
             foreach ($info["questions"] as $q) {
-                $response .= "<h3>Question $i<h3>\n";
+                $response .= "<h3>Question $i</h3>\n";
                 $response .= $q["text"] . "<br>\n";
-                $response .= "<pre>".$exam["questions"][$q["id"]]["response"]."</pre>\n\n";
+                $response .= "<pre>".htmlspecialchars($exam["questions"][$q["id"]]["response"])."</pre>\n\n";
 
                 $comments .= "Question $i\n-----------\n";
                 $comments .= $exam["questions"][$q["id"]]["feedback"] . "\n";
