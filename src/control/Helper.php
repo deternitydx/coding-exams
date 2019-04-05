@@ -224,8 +224,13 @@ class Helper {
         return $this->display("gradehome");
     }
 
-    public function gradeRandom() {
+    public function gradeOne() {
         $eid = $this->input["e"];
+        
+        $uid = null;
+        if (isset($this->input["p"]))
+            $uid = $this->input["p"];
+
         $examInfo = [];
         $res = $this->db->query("select 
             e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
@@ -249,14 +254,27 @@ class Helper {
         if (!isset($this->input['q']))
             die($this->showError("No Question"));
 
-        // select one at random
-        $res = $this->db->query("select pq.person_id, pq.question_id, pq.exam_id,
-            pq.response, q.text, q.code, q.correct, q.rubric, q.score from person_question pq,
-            question q where pq.score is null and pq.grader is null and 
-            pq.question_id = q.id and pq.question_id = $1
-            limit 1;", 
-            [$this->input['q']]);
-        $all = $this->db->fetchAll($res);
+        // TODO The select and update NEED TO BE ATOMIC
+        $all = [];
+        if ($uid == null) {
+            // select one at random
+            $res = $this->db->query("select pq.person_id, pq.question_id, pq.exam_id,
+                pq.response, pq.feedback, pq.score as current_score, q.text, q.code, q.correct, q.rubric, q.score from person_question pq,
+                question q where pq.score is null and pq.grader is null and 
+                pq.question_id = q.id and pq.question_id = $1
+                limit 1;", 
+                [$this->input['q']]);
+            $all = $this->db->fetchAll($res);
+        } else {
+            // select the specific one
+            $res = $this->db->query("select pq.person_id, pq.question_id, pq.exam_id,
+                pq.response, pq.feedback, pq.score as current_score, q.text, q.code, q.correct, q.rubric, q.score from person_question pq,
+                question q where pq.person_id = $2 and 
+                pq.question_id = q.id and pq.question_id = $1
+                limit 1;", 
+                [$this->input['q'], $uid]);
+            $all = $this->db->fetchAll($res);
+        }
         if (isset($all[0]) && isset($all[0]["question_id"])) {
             $data = $all[0];
             $res = $this->db->query("update person_question set grader = $3 where 
@@ -268,6 +286,8 @@ class Helper {
         } else {
             header("Location: ?c=grade&e=".$this->input['e']."&m=done");
         }
+        if ($uid != null)
+            $data["restricted"] = true;
         $this->dData = $data;
         return $this->display("grade_one");
     }
@@ -326,7 +346,7 @@ class Helper {
             $score = $this->input["score"];
 
         $res = $this->db->query("update person_question
-            set score = $4, feedback = $5
+            set score = $4, feedback = $5, grade_time = now()
             where person_id = $1 and question_id = $2 and grader = $3;", 
             [
                 $this->input['student'],
@@ -350,7 +370,7 @@ class Helper {
         $eid = $this->input["exam"];
         $qid = $this->input["question"];
         $this->input = ["e" => $eid, "q" => $qid];
-        return $this->gradeRandom();
+        return $this->gradeOne();
     }
         
     public function saveGrade() {
@@ -536,12 +556,13 @@ class Helper {
 
         $exams = [];
         $questions = [];
-        $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name from person_exam e, person u where e.exam_id = $1 and e.person_id = u.id;", [$eid]);
+        $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name, pc.role from person_exam e, person u, exam ex, person_course pc where e.exam_id = $1 and e.person_id = u.id and pc.person_id = u.id and ex.id = e.exam_id and pc.course_id = ex.course_id;", [$eid]);
         $all = $this->db->fetchAll($res);
         foreach ($all as $exam) {
             $exams[$exam["person_id"]] = [
                 "uva_id" => $exam["uva_id"],
                 "name" => $exam["name"],
+                "role" => $exam["role"],
                 "date_taken" => $exam["date_taken"],
                 "date_started" => $exam["date_started"],
                 "code" => $exam["code"],
@@ -586,8 +607,17 @@ class Helper {
             $qinfo["percent"] = round(100*($graded/$total),0,PHP_ROUND_HALF_DOWN);
         }
 
+        $recents = [];
+        $res = $this->db->query("select * from person_question where exam_id = $1 and grader = $2
+            order by grade_time desc;", [$eid, $this->user["id"]]);
+        $all = $this->db->fetchAll($res);
+        foreach ($all as $row) {
+            if (!isset($recents[$row["question_id"]]))
+                $recents[$row["question_id"]] = [];
+            array_push($recents[$row["question_id"]], ["id" => $row["person_id"]]);
+        }
 
-        return ["info" => $examInfo, "exams" => $exams, "questions" => $questions];
+        return ["info" => $examInfo, "exams" => $exams, "questions" => $questions, "recents" => $recents];
 
     }
 
@@ -677,6 +707,10 @@ class Helper {
         );
 
         foreach ($results["exams"] as $exam) {
+            // only download student grades
+            if ($exam["role"] !== "Student")
+                continue;
+
             //$udir = "$dir/{$exam["name"]}({$exam["uva_id"]})";
             $uzdir = "$zdir/{$exam["name"]}({$exam["uva_id"]})";
             $zip->addEmptyDir($zdir);
@@ -691,13 +725,20 @@ class Helper {
             foreach ($info["questions"] as $q) {
                 $response .= "<h3>Question $i</h3>\n";
                 $response .= $q["text"] . "<br>\n";
-                $response .= "<pre>".htmlspecialchars($exam["questions"][$q["id"]]["response"])."</pre>\n\n";
-
+                if (isset($exam["questions"][$q["id"]]) && isset($exam["questions"][$q["id"]]["response"]))
+                    $response .= "<pre>".htmlspecialchars($exam["questions"][$q["id"]]["response"])."</pre>\n\n";
+                else
+                    $response .= "<pre>NO RESPONSE</pre>\n\n";
                 $comments .= "Question $i\n-----------\n";
-                $comments .= $exam["questions"][$q["id"]]["feedback"] . "\n";
-                $comments .= "Score: " . $exam["questions"][$q["id"]]["score"] ." / ".$q["score"]."\n\n";
+                if (isset($exam["questions"][$q["id"]]) && isset($exam["questions"][$q["id"]]["feedback"])
+                        && isset($exam["questions"][$q["id"]]["score"])) {
+                    $comments .= $exam["questions"][$q["id"]]["feedback"] . "\n";
+                    $comments .= "Score: " . $exam["questions"][$q["id"]]["score"] ." / ".$q["score"]."\n\n";
+                    $score += $exam["questions"][$q["id"]]["score"];
+                } else {
+                    $comments .= "Score: 0 / ".$q["score"]."\n\n";
+                }
                 
-                $score += $exam["questions"][$q["id"]]["score"];
                 $i++;
             }
             $comments .= "-------------------\nFinal Score: $score\n";

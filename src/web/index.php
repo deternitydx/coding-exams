@@ -65,7 +65,10 @@ switch ($command) {
         echo $helper->gradeExam();
         break;
     case "grade_random":
-        echo $helper->gradeRandom();
+        echo $helper->gradeOne();
+        break;
+    case "grade_one":
+        echo $helper->gradeOne(); // checks for input "p"
         break;
     case "save_grade":
         echo $helper->saveGrade();

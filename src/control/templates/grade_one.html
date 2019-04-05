@@ -94,12 +94,12 @@ textarea {
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Grader Comments</label>
-                            <textarea name="comments" style="height: 250px"></textarea>
+                            <textarea name="comments" style="height: 250px">{{data.feedback}}</textarea>
                         </div>
                         <div class="form-group">
                             <label>Final Score</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" name="score">
+                                <input id="score" type="text" class="form-control" name="score" value="{{data.current_score}}">
                                 <span class="input-group-addon">/ {{data.score}}</span>
                             </div>
                         </div>
@@ -107,8 +107,10 @@ textarea {
                 </div>
                 <div class="row">
                     <div class="col-md-12 text-right">
+                        {% if not data.restricted %}
                         <button id="cancel" class="btn btn-danger">Cancel Grading</button>
                         <button id="submitnext" class="btn btn-primary">Save and Next</button>
+                        {% endif %}
                         <button id="submithome" class="btn btn-primary">Save and Home</button>
                     </div>
                 </div>
@@ -118,33 +120,40 @@ textarea {
 </div>
 <script>
 
-    function save() {
+    function save(requireScore) {
           $("textarea").each(function() {
               var obj = $(this);
               if (obj.get(0).CodeMirror) {
                   obj.get(0).CodeMirror.save();  
               }
           });
-        //document.gradeform.submit();
-        $("#grade_form").submit();
-        return true;
+
+        if (requireScore && ($("#score").val() == "" || $("#score").val() == null)) {
+            alert("You MUST enter a score!");
+            return false;
+        } else {
+            //document.gradeform.submit();
+            $("#grade_form").submit();
+            return true;
+        }
+
     }
    
     $("#submithome").click(function(e) {
         e.preventDefault();
-        return save(); // save code mirror
+        return save(true); // save code mirror
     });
     
     $("#submitnext").click(function(e) {
         e.preventDefault();
         $('#grade_form').attr('action', '?c=save_grade_next');
-        return save(); // save code mirror
+        return save(true); // save code mirror
     });
     
     $("#cancel").click(function(e) {
         e.preventDefault();
         $('#grade_form').attr('action', '?c=cancel_grade');
-        return save(); // save code mirror
+        return save(false); // save code mirror
     });
 
 

@@ -41,6 +41,7 @@
 body {
     margin-top: 70px;
     margin-bottom: 70px;
+    background-color: #e7e7ff;
 }
 </style>
 </head>
@@ -147,7 +148,7 @@ body {
         $('#submitBtn').click(function(){
             submitting = true;
             saveTextAreas();
-            if (confirm("Are you completely finished with the coding portion exam?  You may not return."))
+            if (confirm("Are you completely finished with the coding portion of the exam?  You may not return."))
                 document.questionform.submit();
             else {
                 submitting = false;

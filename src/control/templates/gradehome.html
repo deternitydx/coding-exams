@@ -50,6 +50,15 @@ textarea {
     margin-left: 20px;
         margin-right: 20px;
 }
+
+.indented {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.recents {
+    padding-right: 8px;
+}
 </style>
 </head>
 
@@ -86,9 +95,19 @@ textarea {
             <h2>Begin Grading</h2>
             {% set i = 1 %}
             {% for qid, question in data.info.questions %}
+            <h4>Question {{i}}</h4>
             {% if question.percent != 100 %}
-            <p><a href="?c=grade_random&q={{question.id}}&e={{data.info.id}}">Grade Question {{i}}</a></p> 
+            <p><a class="btn btn-primary" href="?c=grade_random&q={{question.id}}&e={{data.info.id}}">Grade Random</a></p>
+            {% else %}
+            <p><span class="btn btn-primary disabled">Grading Done!<span></p>
             {% endif %}
+                {% if data.recents[question.id] %}
+                <h6 class="indented">Your Recently Graded</h6>
+                <p class="indented">
+                {% for response in data.recents[question.id] %}
+                <span class="recents"><a href="?c=grade_one&q={{question.id}}&e={{data.info.id}}&p={{response.id}}">{{response.id}}</a></span>
+                {% endfor %}
+                {% endif %}
             {% set i = i + 1 %}
             {% endfor %}
         </div>
