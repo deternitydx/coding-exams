@@ -512,14 +512,14 @@ class Helper {
         return $exams;
     }
 
-    public function loadResults($examid = null) {
+    public function loadResults($examid = null, $onlyid = null) {
         $eid = $examid;
         if ($examid == null && !isset($this->input["e"]))
             die($this->showError("Unknown Exam"));
 
         if ($examid == null)
             $eid = $this->input["e"];
-
+        
         $examInfo = [];
         $res = $this->db->query("select 
             e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
@@ -686,8 +686,8 @@ class Helper {
         return $_FILES[$name]['tmp_name'];
     }
 
-    public function downloadGrades() {
-        $results = $this->loadResults();
+    public function downloadGrades($onlyid = null) {
+        $results = $this->loadResults(null, $onlyid);
         $info = $results["info"];
         //$dir = Config::$TEMP_DIR . "/".$results["info"]["title"];
         $zdir = $results["info"]["title"];
@@ -696,8 +696,9 @@ class Helper {
         $zip->open($zipname, \ZipArchive::CREATE);
         $zip->addEmptyDir($zdir);
 
-        //if (mkdir($dir) === false)
-        //    die($this->showError("Could not create temp directory"));
+        $tmpDir = \manager\Config::$TEMP_DIR."/".$info["id"];
+        if (mkdir($tmpDir) === false)
+            die($this->showError("Could not create temp directory"));
 
         $gradefile = [];
         array_push($gradefile, [$info["title"], "Points"]); 
@@ -752,9 +753,63 @@ class Helper {
                 "" // late submission
             ]);
 
+            // run pandoc to take response from html to pdf
+            $fullhtml = "<html><head><title>Exam Submission: {$exam["uva_id"]}</title></head><body>$response</body></html>";
+            // pandoc -f html -t pdf (pipe fullhtml as input and capture output)
+            $pdfDoc = null;
+
+            // Open a new process to pandoc (convert to pdf)
+            $tmpFile = $tmpDir . "/". $exam["uva_id"].".pdf";
+            
+            $descriptorspec = array(
+                0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
+                1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+                2 => array("pipe", "a")
+            );
+            $pipes = array();
+            $process = proc_open("cd $tmpDir && pandoc -f html -o $tmpFile --pdf-engine=wkhtmltopdf 2>&1", $descriptorspec, $pipes);
+
+            if (is_resource($process)) {
+                // $pipes now looks like this:
+                // 0 => writeable handle connected to child stdin
+                // 1 => readable handle connected to child stdout
+
+                fwrite($pipes[0], $fullhtml);
+                fclose($pipes[0]);
+
+                $pdfDoc = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+
+                //echo $pdfDoc;
+
+                // It is important that you close any pipes before calling
+                // proc_close in order to avoid a deadlock
+                $return_value = proc_close($process);
+
+            }
+
+            $fileCreated = false;
+            if (is_file($tmpFile)) {
+                $fileCreated = true;
+                //$zip->addFile($tmpFile, "$uzdir/Submission attachment(s)/Submission.pdf");
+                $zip->addFile($tmpFile, "$uzdir/Submission attachment(s)/Submission.pdf");
+                //unlink($tmpFile);
+            }
+
+            /*
+            if ($pdfDoc != null)
+                $zip->addFromString("$uzdir/Submission attachment(s)/Submission.pdf", $pdfDoc);
+            else
+                echo "pandoc error: " . $return_value . "\n";
+             */
             //file_put_contents("$udir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $response);
             //file_put_contents("$udir/comments.txt", $comments);
-            $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $response);
+            if ($fileCreated) 
+                $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", "<p>See attached PDF</p>");
+            else
+                $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $response);
+
             $zip->addFromString("$uzdir/comments.txt", $comments);
         }
 
@@ -782,6 +837,9 @@ class Helper {
         
         // remove the zip from the local filesystem
         unlink($zipname);
+
+        // remove the temporary PDFs from the filesystem
+        
 
         // return the contents of the zipfile
         return $zipfile;
