@@ -224,6 +224,14 @@ class Helper {
         return $this->display("gradehome");
     }
 
+    public function gradeExamStats() {
+        $data = $this->loadResults();
+        // do grading
+        $this->dData = $data;
+        
+        return $this->display("gradestats");
+    }
+
     public function gradeOne() {
         $eid = $this->input["e"];
         
@@ -258,31 +266,67 @@ class Helper {
         $all = [];
         if ($uid == null) {
             // select one at random
-            $res = $this->db->query("select pq.person_id, pq.question_id, pq.exam_id,
+            /*$res = $this->db->query("select pq.person_id, pq.question_id, pq.exam_id,
                 pq.response, pq.feedback, pq.score as current_score, q.text, q.code, q.correct, q.rubric, q.score from person_question pq,
                 question q where pq.score is null and pq.grader is null and 
                 pq.question_id = q.id and pq.question_id = $1
                 limit 1;", 
                 [$this->input['q']]);
+             */
+            $res = $this->db->query("update person_question set grader = $2 where 
+                (person_id, question_id, exam_id) = 
+                (select pq.person_id, pq.question_id, pq.exam_id
+                    from person_question pq, person_exam pe
+                    where pq.score is null and pq.grader is null and 
+                    pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
+                    pe.date_taken is not null and pq.question_id = $1
+                    limit 1)
+                returning *;",
+                [$this->input['q'],
+                $this->user["id"]]);
             $all = $this->db->fetchAll($res);
         } else {
             // select the specific one
-            $res = $this->db->query("select pq.person_id, pq.question_id, pq.exam_id,
-                pq.response, pq.feedback, pq.score as current_score, q.text, q.code, q.correct, q.rubric, q.score from person_question pq,
-                question q where pq.person_id = $2 and 
-                pq.question_id = q.id and pq.question_id = $1
-                limit 1;", 
-                [$this->input['q'], $uid]);
+            $res = $this->db->query("update person_question set grader = $3 where 
+                (person_id, question_id, exam_id) = 
+                (select pq.person_id, pq.question_id, pq.exam_id
+                    from person_question pq, person_exam pe
+                    where pq.person_id = $2 and 
+                    pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
+                    pe.date_taken is not null and pq.question_id = $1
+                    limit 1)
+                returning *;",
+                [$this->input['q'], $uid, $this->user["id"]]);
             $all = $this->db->fetchAll($res);
         }
         if (isset($all[0]) && isset($all[0]["question_id"])) {
             $data = $all[0];
+            $data["current_score"] = $data["score"]; // fix the returning *
+            unset($data["score"]);
+            
+            // get the question information
+            $resQues = $this->db->query("select text, code, correct, rubric, score from question where id = $1;",
+                [$this->input['q']]);
+            $allQdata = $this->db->fetchAll($resQues);
+
+            if (isset($allQdata[0]) && isset($allQdata[0]["text"])) {
+                $data["text"] = $allQdata[0]["text"];
+                $data["code"] = $allQdata[0]["code"];
+                $data["correct"] = $allQdata[0]["correct"];
+                $data["rubric"] = $allQdata[0]["rubric"];
+                $data["score"] = $allQdata[0]["score"];
+            } else {
+                die("Something really bad happened");
+            }
+
+            /*
             $res = $this->db->query("update person_question set grader = $3 where 
                 person_id = $1 and question_id = $2;", [
                 $data["person_id"],
                 $data["question_id"],
                 $this->user["id"]
             ]);
+             */
         } else {
             header("Location: ?c=grade&e=".$this->input['e']."&m=done");
         }
@@ -793,7 +837,7 @@ class Helper {
             if (is_file($tmpFile)) {
                 $fileCreated = true;
                 //$zip->addFile($tmpFile, "$uzdir/Submission attachment(s)/Submission.pdf");
-                $zip->addFile($tmpFile, "$uzdir/Submission attachment(s)/Submission.pdf");
+                $zip->addFile($tmpFile, "$uzdir/Feedback Attachment(s)/Submission.pdf");
                 //unlink($tmpFile);
             }
 

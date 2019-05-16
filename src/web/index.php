@@ -64,6 +64,9 @@ switch ($command) {
     case "grade":
         echo $helper->gradeExam();
         break;
+    case "grade_stats":
+        echo $helper->gradeExamStats();
+        break;
     case "grade_random":
         echo $helper->gradeOne();
         break;

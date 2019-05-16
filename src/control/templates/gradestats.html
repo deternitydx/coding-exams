@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Grade Exam</title>
+    <title>Grading Stats</title>
 
+<meta http-equiv="refresh" content="90">
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
 
@@ -67,8 +68,7 @@ textarea {
 {{ topNavigation() }}
 
 <div class="container" role="main">
-    <h1>Grade: {{data.info.title}}</h1>
-    <p>Use the links below to grade the exam.  Grading is done at random.</p>
+    <h1>Grading Stats: {{data.info.title}}</h1>
 
     {% if data.message %}
     <div class="alert alert-01 alert-success" id="success-message">
@@ -76,14 +76,13 @@ textarea {
     </div><!-- end alert -->
     {% endif %}
     <div class="row">
-        <div class="col-md-12">
-            <h2>Current Stats</h2>
+        <div class="col-md-12" style="padding-top: 80px;">
             {% set i = 1 %}
             {% for question in data.info.questions %}
-            <p>Question {{i}}</p> 
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" aria-valuenow="{{question.percent}}" aria-valuemin="0" aria-valuemax="100" style="width: {{question.percent}}%;">
-                    {{question.percent}}%
+            <p>Question {{i}}: 
+                    {{question.percent}}%</p>
+            <div class="progress" style="margin-bottom: 70px; height: 40px;">
+                <div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="{{question.percent}}" aria-valuemin="0" aria-valuemax="100" style="width: {{question.percent}}%;" style="height: 40px;">
                 </div>
             </div>
             {% set i = i + 1 %}
@@ -91,26 +90,6 @@ textarea {
            
         </div>
 
-        <div class="col-md-12">
-            <h2>Begin Grading</h2>
-            {% set i = 1 %}
-            {% for qid, question in data.info.questions %}
-            <h4>Question {{i}}</h4>
-            {% if question.percent != 100 %}
-            <p><a class="btn btn-primary" href="?c=grade_random&q={{question.id}}&e={{data.info.id}}">Grade Random</a></p>
-            {% else %}
-            <p><span class="btn btn-primary disabled">Grading Done!<span></p>
-            {% endif %}
-                {% if data.recents[question.id] %}
-                <h6 class="indented">Your Recently Graded</h6>
-                <p class="indented">
-                {% for response in data.recents[question.id] %}
-                <span class="recents"><a href="?c=grade_one&q={{question.id}}&e={{data.info.id}}&p={{response.id}}">{{response.id}}</a></span>
-                {% endfor %}
-                {% endif %}
-            {% set i = i + 1 %}
-            {% endfor %}
-        </div>
     </div>
 
 
