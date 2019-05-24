@@ -61,6 +61,12 @@ switch ($command) {
     case "create_exam":
         echo $helper->createExam();
         break;
+    case "open_exam":
+        echo $helper->openExam();
+        break;
+    case "close_exam":
+        echo $helper->closeExam();
+        break;
     case "grade":
         echo $helper->gradeExam();
         break;

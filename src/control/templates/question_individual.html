@@ -46,7 +46,7 @@ body {
 
 <body role="document">
 {% from 'page_navigation.html' import topNavigation,footer %}
-{{ topNavigation() }}
+{{ topNavigation(user) }}
 
 <div class="container" role="main">
     <h1>Question {{data.qNo}}</h1>

@@ -48,7 +48,7 @@ body {
 
 <body role="document">
 {% from 'page_navigation.html' import topNavigation,footer %}
-{{ topNavigation() }}
+{{ topNavigation(user) }}
 
 <div class="container" role="main">
     <h1>{{data.title}}: {{user.name}} ({{user.uva_id}})</h1>

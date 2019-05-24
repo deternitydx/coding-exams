@@ -1,4 +1,4 @@
-{% macro topNavigation() %}
+{% macro topNavigation(user) %}
 
     <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
@@ -13,10 +13,13 @@
         </div>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-                <!--<li><a href="?c=choose">Chooser</a></li>-->
+                {% if user.admin %}
+                    <li><a href="?c=new_course">New Course</a></li>
+                {% endif %}
             </ul>
             <div class="navbar-right">
                 <ul class="nav navbar-nav">
+                    <li><a href="#"><i class="fa fa-user-circle" aria-hidden="true"></i> {{user.name}}</a></li>
                 </ul>
             </div>
         </div><!--/.nav-collapse -->

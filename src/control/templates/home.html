@@ -35,12 +35,27 @@ body {
     margin-top: 70px;
     margin-bottom: 70px;
 }
+
+.course {
+    margin-bottom: 30px;
+}
+
+.coursetable {
+    margin-bottom: 20px;
+}
+.coursetable tr {
+    margin: 0px;
+}
+
+.coursetable td {
+    padding: 7px;
+}
 </style>
 </head>
 
 <body role="document">
 {% from 'page_navigation.html' import topNavigation,footer %}
-{{ topNavigation() }}
+{{ topNavigation(user) }}
 
 
 <div class="container" role="main">
@@ -52,25 +67,45 @@ body {
             {% for year, ydata in data %}
             <h3 style="border-bottom: 1px solid #ccc;">{{year}}</h3>
                 {% for course, cdata in ydata %}
-                    <h4>{{course}}: {{cdata.title}}</h4>
-                    {% for exam in cdata.exams %}
-                    <p> {{ exam.title}} :
-                        {% if exam.date_taken == "" %}
-                            <a href="?c=exam&e={{exam.id}}">Take Exam</a> 
-                        {% else %}
-                        Already Taken 
-                        {% endif %}
-                        {% if cdata.role == "Instructor" or cdata.role== "Secondary Instructor" or cdata.role == "Teaching Assistant" %}
-                            | <a href="?c=grade&e={{exam.id}}">Grade Exam</a> 
-                        {% endif %}
-                        {% if cdata.role == "Instructor"%}
-                            | <a href="?c=download&e={{exam.id}}">Download Scores</a> 
-                        {% endif %}
+                    <div class="course">
+                        <h4>{{course}}: {{cdata.title}}</h4>
+                        <table class="coursetable">
+                        {% for exam in cdata.exams %}
+                        <tr>
+                            <td>{{ exam.title}}</td>
+                            <td>
+                            {% if exam.closed %}
+                                <span class="btn btn-xs btn-primary disabled">Exam Closed</span> 
+                            {% elseif exam.date_taken == "" %}
+                                <a href="?c=exam&e={{exam.id}}" class="btn btn-xs btn-primary">Take Exam</a> 
+                            {% else %}
+                                <span class="btn btn-xs btn-primary disabled">Already Taken</span> 
+                            {% endif %}
+                            </td>
+                            {% if cdata.role == "Instructor" or cdata.role== "Secondary Instructor" or cdata.role == "Teaching Assistant" %}
+                                <td><a href="?c=grade&e={{exam.id}}" class="btn btn-xs btn-success">Grade Exam</a></td>
+                            {% endif %}
+                            {% if cdata.role == "Instructor"%}
+                                <td><a href="?c=download&e={{exam.id}}" class="btn btn-xs btn-warning">Download Scores</a></td>
+                                <td>
+                                {% if exam.closed %}
+                                    <a href="?c=open_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Open Submissions</a> 
+                                {% else %}
+                                    <a href="?c=close_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Close Submissions</a> 
+                                {% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                        </table>
+                        {% if cdata.role == "Instructor" %}
+                        <p>
+                        <a href="?c=new_exam&course={{cdata.id}}" class='btn btn-small btn-success'>
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                            Create New Exam</a>
                         </p>
-                    {% endfor %}
-                    {% if cdata.role == "Instructor" %}
-                    <p><a href="?c=new_exam&course={{cdata.id}}">Create New Exam</a></p>
-                    {% endif %}
+                        {% endif %}
+                    </div>
                 {% endfor %}
             {% endfor %}
         </div>

@@ -34,7 +34,8 @@ class Helper {
             return [
                 "id" => $data[0]["id"],
                 "uva_id" => $data[0]["uva_id"],
-                "name" => $data[0]["name"]
+                "name" => $data[0]["name"],
+                "admin" => $data[0]["admin"] == 't' ? true : false
             ];
         }
         return null;
@@ -114,7 +115,72 @@ class Helper {
         header("Location: ?");
     }
 
+    private function checkValidExam() {
+        $data = $this->loadCourses();
+        $cid = $this->input["course"];
+        $course = null;
+        $allowed = false;
+        foreach ($data as $y) {
+            foreach ($y as $c) {
+                if ($c["id"] == $cid && $c["role"] == "Instructor") {
+                    $allowed = true;
+                    $course = $c;
+                }
+            }
+        }
+        if (!$allowed) {
+            die($this->showError("Not Authorized"));
+        }
+
+        if (!isset($this->input["e"]) || !is_numeric($this->input["e"])) {
+            die($this->showError("No Exam Given"));
+        }
+
+        $eid = $this->input["e"];
+
+        $res = $this->db->query("select 
+            e.id, e.date, e.open, e.close, e.closed, e.title from course c, exam e, person_course pc 
+            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
+                pc.role in ('Instructor')
+                and e.id = $2", 
+            [$this->user["id"], $eid]);
+        $all = $this->db->fetchAll($res);
+        $allowed = false;
+        foreach ($all as $row) {
+            if ($row["id"] == $eid) {
+                $allowed = true;
+                $examInfo = $row;
+                break;
+            }
+        }
+        
+        if (!$allowed)
+            die($this->showError("You do not have permissions to modify this exam (Instructors only!)"));
+
+        return $eid;
+    } 
+
+    public function openExam() {
+        $exam = $this->checkValidExam();
+
+        $res = $this->db->query("update exam set closed = false where id = $1;",
+            [$exam]);
+
+        header("Location: ?");
+    }
+
+    public function closeExam() {
+        $exam = $this->checkValidExam();
+
+        $res = $this->db->query("update exam set closed = true where id = $1;",
+            [$exam]);
+
+        header("Location: ?");
+    }
+
     public function newCourse() {
+        if (!$this->user["admin"])
+            die($this->showError("Not Authorized"));
         return $this->display("newcourse");
     }
 
@@ -440,12 +506,12 @@ class Helper {
             $eid = $this->input["e"];
 
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close from course c, exam e, person_course pc 
+            e.id, e.date, e.open, e.close, e.closed from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1;", [$this->user["id"]]);
         $all = $this->db->fetchAll($res);
         $allowed = false;
         foreach ($all as $row) {
-            if ($row["id"] == $eid) {
+            if ($row["id"] == $eid && $row["closed"] != 't') {
                 $allowed = true;
                 break;
             }
@@ -522,7 +588,7 @@ class Helper {
         }
         
         $res = $this->db->query("select c.title as course, c.year, c.semester, c.uva_id as courseid, e.title,
-            e.id, e.date, e.open, e.close, pc.role from course c, exam e, person_course pc where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 order by c.year desc;", [$this->user["id"]]);
+            e.id, e.date, e.open, e.close, e.closed, pc.role from course c, exam e, person_course pc where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 order by c.year desc, e.id asc;", [$this->user["id"]]);
         $all = $this->db->fetchAll($res);
 
         if (empty($all))
@@ -543,7 +609,8 @@ class Helper {
                 "id" => $row["id"],
                 "date" => $row["date"],
                 "open" => $row["open"],
-                "close" => $row["close"]
+                "close" => $row["close"],
+                "closed" => $row["closed"] == 't' ? true : false
             ];
 
             $res2 = $this->db->query("select * from person_exam where exam_id = $1 and person_id = $2;", [$row["id"], $this->user["id"]]);
