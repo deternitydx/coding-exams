@@ -50,6 +50,11 @@ body {
 .coursetable td {
     padding: 7px;
 }
+
+.panel-title {
+    padding-top: 5px;
+        padding-bottom: 5px;
+}
 </style>
 </head>
 
@@ -63,49 +68,61 @@ body {
     <p>Hello, <span style="font-weight: bold;">{{user.name}}</span>!  You have the following actions available.</p>
 
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-12" id="accordian">
             {% for year, ydata in data %}
             <h3 style="border-bottom: 1px solid #ccc;">{{year}}</h3>
+                {% set i = 0 %}
                 {% for course, cdata in ydata %}
-                    <div class="course">
-                        <h4>{{course}}: {{cdata.title}}</h4>
-                        <table class="coursetable">
-                        {% for exam in cdata.exams %}
-                        <tr>
-                            <td>{{ exam.title}}</td>
-                            <td>
-                            {% if exam.closed %}
-                                <span class="btn btn-xs btn-primary disabled">Exam Closed</span> 
-                            {% elseif exam.date_taken == "" %}
-                                <a href="?c=exam&e={{exam.id}}" class="btn btn-xs btn-primary">Take Exam</a> 
-                            {% else %}
-                                <span class="btn btn-xs btn-primary disabled">Already Taken</span> 
-                            {% endif %}
-                            </td>
-                            {% if cdata.role == "Instructor" or cdata.role== "Secondary Instructor" or cdata.role == "Teaching Assistant" %}
-                                <td><a href="?c=grade&e={{exam.id}}" class="btn btn-xs btn-success">Grade Exam</a></td>
-                            {% endif %}
-                            {% if cdata.role == "Instructor"%}
-                                <td><a href="?c=download&e={{exam.id}}" class="btn btn-xs btn-warning">Download Scores</a></td>
-                                <td>
-                                {% if exam.closed %}
-                                    <a href="?c=open_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Open Submissions</a> 
-                                {% else %}
-                                    <a href="?c=close_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Close Submissions</a> 
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading{{i}}">
+                            <div class="btn-group pull-right">
+                                {% if cdata.role == "Instructor" %}
+                                <a href="?c=new_exam&course={{cdata.id}}" class='btn btn-sm btn-success'>
+                                    <i class="fa fa-plus" aria-hidden="true"></i>
+                                    Create New Exam</a>
                                 {% endif %}
-                                </td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                        </table>
-                        {% if cdata.role == "Instructor" %}
-                        <p>
-                        <a href="?c=new_exam&course={{cdata.id}}" class='btn btn-small btn-success'>
-                            <i class="fa fa-plus" aria-hidden="true"></i>
-                            Create New Exam</a>
-                        </p>
-                        {% endif %}
+                            </div>
+                            <h4 class="panel-title">
+                                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse{{i}}" aria-expanded="true" aria-controls="collapse{{i}}">
+                                    {{course}}: {{cdata.title}}
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse{{i}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{i}}">
+                            <div class="panel-body">
+                                <table class="coursetable">
+                                {% for exam in cdata.exams %}
+                                <tr>
+                                    <td>{{ exam.title}}</td>
+                                    <td>
+                                    {% if exam.closed %}
+                                        <span class="btn btn-xs btn-primary disabled">Exam Closed</span> 
+                                    {% elseif exam.date_taken == "" %}
+                                        <a href="?c=exam&e={{exam.id}}" class="btn btn-xs btn-primary">Take Exam</a> 
+                                    {% else %}
+                                        <span class="btn btn-xs btn-primary disabled">Already Taken</span> 
+                                    {% endif %}
+                                    </td>
+                                    {% if cdata.role == "Instructor" or cdata.role== "Secondary Instructor" or cdata.role == "Teaching Assistant" %}
+                                        <td><a href="?c=grade&e={{exam.id}}" class="btn btn-xs btn-success">Grade Exam</a></td>
+                                    {% endif %}
+                                    {% if cdata.role == "Instructor"%}
+                                        <td><a href="?c=download&e={{exam.id}}" class="btn btn-xs btn-warning">Download Scores</a></td>
+                                        <td>
+                                        {% if exam.closed %}
+                                            <a href="?c=open_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Open Submissions</a> 
+                                        {% else %}
+                                            <a href="?c=close_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Close Submissions</a> 
+                                        {% endif %}
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                                </table>
+                            </div>
+                        </div>
                     </div>
+                    {% set i = i + 1 %}
                 {% endfor %}
             {% endfor %}
         </div>

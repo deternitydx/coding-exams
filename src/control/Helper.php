@@ -604,14 +604,14 @@ class Helper {
         $res = $this->db->query("select c.title as course, c.year, c.semester, c.uva_id as courseid, c.id, pc.role 
             from course c, person_course pc 
             where pc.course_id = c.id and pc.person_id = $1 
-            order by c.year desc;", [$this->user["id"]]);
+            order by c.year desc, c.semester asc;", [$this->user["id"]]);
         $all = $this->db->fetchAll($res);
 
         foreach ($all as $row) {
-            if (!isset($exams[$row["year"]]))
-                $exams[$row["year"]] = [];
-            if (!isset($exams[$row["year"]][$row["courseid"]]))
-                $exams[$row["year"]][$row["courseid"]] = [
+            if (!isset($exams[$row["year"] . " - " . $row["semester"]]))
+                $exams[$row["year"] . " - " . $row["semester"]] = [];
+            if (!isset($exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]]))
+                $exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]] = [
                     "title" => $row["course"],
                     "uva_id" => $row["courseid"],
                     "id" => $row["id"],
@@ -621,23 +621,25 @@ class Helper {
         }
         
         $res = $this->db->query("select c.title as course, c.year, c.semester, c.uva_id as courseid, e.title,
-            e.id, e.date, e.open, e.close, e.closed, pc.role from course c, exam e, person_course pc where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 order by c.year desc, e.id asc;", [$this->user["id"]]);
+            e.id, e.date, e.open, e.close, e.closed, pc.role from course c, exam e, person_course pc where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 order by c.year desc, c.semester asc, e.id asc;", [$this->user["id"]]);
         $all = $this->db->fetchAll($res);
 
         if (empty($all))
             return $exams;
 
         foreach ($all as $row) {
-            if (!isset($exams[$row["year"]]))
-                $exams[$row["year"]] = [];
-            if (!isset($exams[$row["year"]][$row["courseid"]]))
-                $exams[$row["year"]][$row["courseid"]] = [
+            if (!isset($exams[$row["year"] . " - " . $row["semester"]]))
+                $exams[$row["year"] . " - " . $row["semester"]] = [];
+            if (!isset($exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]]))
+                $exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]] = [
                     "title" => $row["course"],
                     "role" => $row["role"],
+                    "year" => $row["year"],
+                    "semester" => $row["semester"],
                     "exams" => []
                 ];
 
-            $exams[$row["year"]][$row["courseid"]]["exams"][$row["id"]] = [
+            $exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]]["exams"][$row["id"]] = [
                 "title" => $row["title"],
                 "id" => $row["id"],
                 "date" => $row["date"],
@@ -649,7 +651,7 @@ class Helper {
             $res2 = $this->db->query("select * from person_exam where exam_id = $1 and person_id = $2;", [$row["id"], $this->user["id"]]);
             $all2 = $this->db->fetchAll($res2);
             if (isset($all2[0]) && isset($all2[0]["date_taken"])) {
-                $exams[$row["year"]][$row["courseid"]]["exams"][$row["id"]]["date_taken"] = $all2[0]["date_taken"];
+                $exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]]["exams"][$row["id"]]["date_taken"] = $all2[0]["date_taken"];
             }
         }
         
