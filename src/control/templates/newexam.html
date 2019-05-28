@@ -4,7 +4,7 @@
     <title>Create New Exam</title>
 
 <!-- JQuery -->
-<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
 
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
@@ -33,6 +33,10 @@
 <script src="js/codemirror/addon/hint/show-hint.js"></script>
 <script src="js/clike.js"></script>
 
+<link href="//cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.css" rel="stylesheet">
+<script src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.js"></script>
+
+
 <meta charset="utf-8"/>
 <style>
 .CodeMirror {
@@ -49,6 +53,18 @@ textarea {
 .question-group .form-group {
     margin-left: 20px;
         margin-right: 20px;
+}
+
+.note-frame {
+    margin-bottom: 2px;
+}
+
+.form-help {
+    margin-top 0px;
+    padding-top: 2px;
+        color: #555;
+    font-style:italic;
+        text-align: right;
 }
 </style>
 </head>
@@ -75,6 +91,7 @@ textarea {
                     <div class="form-group">
                         <label for="question[]">Text (use HTML tags)</label>
                         <textarea name="question[]" class="htmltext"></textarea>
+                        <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
                     </div>
                     <div class="form-group">
                         <label for="code[]">Code (Java Syntax Highlighted)</label>
@@ -129,6 +146,26 @@ textarea {
           });
           $("textarea.htmltext").each(function() {
               var obj = $(this);
+              if (!obj.get(0).SummerNote) {
+                  obj.get(0).SummerNote = obj.summernote({
+                        height: 300,
+                         toolbar: [
+                            // [groupName, [list of button]]
+                            ['style', ['style']],
+                            ['font', ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript']],
+                            ['fontsize', ['fontsize']],
+                            ['color', ['color']],
+                            ['para', ['ul', 'ol', 'paragraph']]
+                          ]
+
+                  });
+                      //mode: mixedMode,
+                      //selectionPointer: true
+              }
+          });
+          /*
+          $("textarea.htmltext").each(function() {
+              var obj = $(this);
               if (!obj.get(0).CodeMirror) {
                   obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
                       lineNumbers: true,
@@ -140,6 +177,7 @@ textarea {
                       //selectionPointer: true
               }
           });
+          */
           $("textarea.codetext").each(function() {
               var obj = $(this);
               if (!obj.get(0).CodeMirror) {
