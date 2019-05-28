@@ -59,6 +59,11 @@ textarea {
 .recents {
     padding-right: 8px;
 }
+
+.panel-title {
+    padding-top: 5px;
+        padding-bottom: 5px;
+}
 </style>
 </head>
 
@@ -67,7 +72,7 @@ textarea {
 {{ topNavigation(user) }}
 
 <div class="container" role="main">
-    <h1>Grade: {{data.info.title}}</h1>
+    <h1>{{data.info.title}}: Grading</h1>
     <p>Use the links below to grade the exam.  Grading is done at random.</p>
 
     {% if data.message %}
@@ -77,11 +82,11 @@ textarea {
     {% endif %}
     <div class="row">
         <div class="col-md-12">
-            <h2>Current Stats</h2>
+            <div class="well well-lg">
             {% set i = 1 %}
             {% for question in data.info.questions %}
             <p>Question {{i}}</p> 
-            <div class="progress">
+            <div class="progress" style="border: 1px solid #777; height: 1.6em">
                 <div class="progress-bar" role="progressbar" aria-valuenow="{{question.percent}}" aria-valuemin="0" aria-valuemax="100" style="width: {{question.percent}}%;">
                     {{question.percent}}%
                 </div>
@@ -89,25 +94,43 @@ textarea {
             {% set i = i + 1 %}
             {% endfor %}
             <p style="text-align: right"> <a href="?c=grade_stats&e={{data.info.id}}" class="btn btn-sm btn-info"><i class="fa fa-pie-chart" aria-hidden="true"></i></a></p>
+            </div>
         </div>
 
         <div class="col-md-12">
-            <h2>Begin Grading</h2>
+            <h2>Grading</h2>
             {% set i = 1 %}
             {% for qid, question in data.info.questions %}
-            <h4>Question {{i}}</h4>
-            {% if question.percent != 100 %}
-            <p><a class="btn btn-primary" href="?c=grade_random&q={{question.id}}&e={{data.info.id}}">Grade Random</a></p>
-            {% else %}
-            <p><span class="btn btn-primary disabled">Grading Done!<span></p>
-            {% endif %}
-                {% if data.recents[question.id] %}
-                <h6 class="indented">Your Recently Graded</h6>
-                <p class="indented">
-                {% for response in data.recents[question.id] %}
-                <span class="recents"><a href="?c=grade_one&q={{question.id}}&e={{data.info.id}}&p={{response.id}}">{{response.id}}</a></span>
-                {% endfor %}
-                {% endif %}
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="heading{{i}}">
+                    <div class="btn-group pull-right">
+                        {% if question.percent != 100 %}
+                        <a class="btn btn-primary btn-sm" href="?c=grade_random&q={{question.id}}&e={{data.info.id}}">
+                            <i class="fa fa-pencil" aria-hidden="true"></i> Grade Random</a>
+                        {% else %}
+                        <span class="btn btn-primary btn-sm disabled"><i class="fa fa-check" aria-hidden="true"></i> Grading Done</span>
+                        {% endif %}
+                        <a role="button" class="btn btn-warning btn-sm" data-toggle="collapse" href="#collapse{{i}}" aria-expanded="true" aria-controls="collapse{{i}}">
+                            <i class="fa fa-history" aria-hidden="true"></i> Recently Graded
+                        </a>
+                        {% if user.admin and question.percent != 100 %}  
+                        <a href="?c=grade_checkin&q={{question.id}}&e={{data.info.id}}" class="btn btn-danger btn-sm">
+                            <i class="fa fa-undo" aria-hidden="true"></i> Check-in All
+                        </a>
+                        {% endif %}
+                    </div>
+                    <h4 class="panel-title">
+                        Question {{i}}
+                    </h4>
+                </div>
+                <div id="collapse{{i}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading{{i}}">
+                    <div class="panel-body">
+                        {% for response in data.recents[question.id] %}
+                        <span class="recents"><a href="?c=grade_one&q={{question.id}}&e={{data.info.id}}&p={{response.id}}">{{response.id}}</a></span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
             {% set i = i + 1 %}
             {% endfor %}
         </div>

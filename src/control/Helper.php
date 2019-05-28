@@ -284,7 +284,9 @@ class Helper {
         if (isset($this->input["m"])) {
             $m = $this->input["m"];
             if ($m == "done")
-                $this->dData["message"] = "There are no more of that question to grade";
+                $this->dData["message"] = "There are no more of that question to grade.";
+            else if ($m == "checkin")
+                $this->dData["message"] = "Ungraded questions checked in.";
         }
         
         return $this->display("gradehome");
@@ -400,6 +402,37 @@ class Helper {
             $data["restricted"] = true;
         $this->dData = $data;
         return $this->display("grade_one");
+    }
+
+    public function checkinAllUngraded() {
+        $eid = $this->input["e"];
+        $res = $this->db->query("select 
+            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
+                pc.role in ('Instructor')
+                and e.id = $2", 
+            [$this->user["id"], $eid]);
+        $all = $this->db->fetchAll($res);
+        $allowed = false;
+        foreach ($all as $row) {
+            if ($row["id"] == $eid) {
+                $allowed = true;
+                $examInfo = $row;
+                break;
+            }
+        }
+        
+        if (!$allowed)
+            die($this->showError("You do not have permissions to grade this exam"));
+
+        if (!isset($this->input['q']))
+            die($this->showError("No Question"));
+
+        $res = $this->db->query("update person_question pq set grader = null 
+            where exam_id = $1 and question_id = $2 and grader is not null and grade_time is null;",  
+            [$eid, $this->input['q']]);
+
+        header("Location: ?c=grade&e=".$this->input['e']."&m=checkin");
     }
 
     public function cancelGrade() {

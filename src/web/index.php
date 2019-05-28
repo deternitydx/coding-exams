@@ -85,6 +85,9 @@ switch ($command) {
     case "cancel_grade":
         echo $helper->cancelGrade();
         break;
+    case "grade_checkin":
+        echo $helper->checkinAllUngraded();
+        break;
     case "save_grade_next":
         echo $helper->saveNextGrade();
         break;
