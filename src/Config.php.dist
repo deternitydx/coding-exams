@@ -1,0 +1,19 @@
+<?php
+
+namespace manager;
+
+class Config {
+
+    public static $DATABASE = [
+        "host" => "localhost",
+        "port" => "5432",
+        "database" => "DBNAME",
+        "user" => "USERNAME",
+        "password" => "PASSWORD"
+    ];
+
+    public static $TEMPLATE_DIR = "/PATH/TO/src/control/templates";
+
+    public static $TEMP_DIR = "/PATH/TO/tmp";
+    public static $LOG_FILE = "/PATH/TO/log.txt";
+}
