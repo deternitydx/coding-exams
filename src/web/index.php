@@ -1,10 +1,19 @@
 <?php
+/**
+ * This file contains the main command logic. 
+ *
+ * @author Robbie Hott
+ * @license https://opensource.org/licenses/Apache-2.0 Apache-2.0
+ * (except str_putcsv as noted below)
+ */
+include("../../vendor/autoload.php");
+
+/**
 ini_set("display_errors", 1);
 ini_set("track_errors", 1);
 ini_set("html_errors", 1);
 error_reporting(E_ALL);
-
-include("../../vendor/autoload.php");
+*/
 
 use \Monolog\Logger;
 use \Monolog\Handler\StreamHandler;
@@ -15,6 +24,7 @@ $log = new StreamHandler(\manager\Config::$LOG_FILE, $loglevel);
 $helper = new \manager\control\Helper();
 
 // helper function for CSV
+// From: https://gist.github.com/johanmeiring/2894568
 if (!function_exists('str_putcsv')) {
     function str_putcsv($input, $delimiter = ',', $enclosure = '"') {
         $fp = fopen('php://temp', 'r+b');
