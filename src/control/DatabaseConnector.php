@@ -1,4 +1,17 @@
 <?php
+/**
+ * Postgres Database Connector Class
+ *
+ * This class is based off the class I wrote and provided in the SNAC project, at:
+ * https://github.com/snac-cooperative/snac/blob/master/src/snac/server/database/DatabaseConnector.php
+ * Therefore, it contains the same license and copyright as the original.  The file has been modified
+ * to remove the SNAC-specific error messages.
+ *
+ * @author Robbie Hott
+ * @license https://opensource.org/licenses/BSD-3-Clause BSD 3-Clause
+ * @copyright 2015 the Rector and Visitors of the University of Virginia, and
+ *            the Regents of the University of California
+ */
 namespace manager\control;
 
 use \manager\Config as Config;
@@ -7,11 +20,9 @@ use \manager\Config as Config;
  * Database Connector Class
  *
  * This class provides a thin layer in front of the standard PHP Postgres library functions, so that
- * correct error handling may happen throughout the code.  The methods in this class throw the appropriate SNAC
- * Exception object when something goes wrong during database connection and use.
+ * correct error handling may happen throughout the code.  
  *
  * @author Robbie Hott
- *
  */
 class DatabaseConnector {
 
@@ -24,8 +35,6 @@ class DatabaseConnector {
      * Constructor
      *
      * Opens the connection to the database on construct
-     *
-     * @throws \snac\exceptions\SNACDatabaseException
      */
     public function __construct() {
 
@@ -71,7 +80,6 @@ class DatabaseConnector {
      *
      * @param string $statementName Statement name to execute
      * @param mixed[] $values Parameters to fill the prepared statement (will be cast to string)
-     * @throws \snac\exceptions\SNACDatabaseException
      * @return \resource Postgres resource for the result
      */
     public function execute($statementName, $values) {
@@ -103,7 +111,6 @@ class DatabaseConnector {
      *
      * @param string $query Query to prepare (with $1, $2, .. placeholders)
      * @param mixed[] $values Parameters to fill the prepared statement (will be cast to string)
-     * @throws \snac\exceptions\SNACDatabaseException
      * @return \resource Postgres resource for the result
      */
     public function query($query, $values) {
@@ -120,8 +127,6 @@ class DatabaseConnector {
      * break with mixed case.
      *
      * @return void
-     *
-     *
      */
 
     public function deallocate($query) {
@@ -138,7 +143,6 @@ class DatabaseConnector {
      *
      * @param \resource $resource Postgres result resource (From $db->execute())
      * @return string[] Next row from the database as an associative array, or false if no rows to return
-     * @throws \snac\exceptions\SNACDatabaseException
      */
     public function fetchRow($resource) {
         $row = \pg_fetch_assoc($resource);
@@ -153,7 +157,6 @@ class DatabaseConnector {
      *
      * @param \resource $resource Postgres result resource (From $db->execute())
      * @return string[][] All rows from the database as an associative array, or false if no rows to return
-     * @throws \snac\exceptions\SNACDatabaseException
      */
     public function fetchAll($resource) {
         $rows = \pg_fetch_all($resource);
