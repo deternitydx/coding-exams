@@ -752,6 +752,8 @@ class Helper {
             $qinfo["graded"] = $graded;
             $qinfo["percent"] = round(100*($graded/$total),0,PHP_ROUND_HALF_DOWN);
         }
+        // do not use qinfo again in this method, or call unset below first
+        //unset($qinfo);
 
         $recents = [];
         $res = $this->db->query("select * from person_question where exam_id = $1 and grader = $2
