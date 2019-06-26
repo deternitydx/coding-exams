@@ -1,16 +1,54 @@
 <?php
+/**
+ * Main helper class 
+ *
+ * This classfile contains all the control structure of the system.
+ *
+ * @author Robbie Hott
+ * @license https://opensource.org/licenses/Apache-2.0 Apache-2.0
+ * @copyright 2019
+ */
 namespace manager\control;
-
 use \manager\Config as Config;
 
+/**
+ * Helper class
+ *
+ * Provides all control methods
+ */
 class Helper {
 
+    /**
+     * @var Associative array of data used for the display
+     */
     private $dData;
+
+    /**
+     * @var \manager\control\DatabaseConnector The connector to the database
+     */
     private $db;
+
+    /**
+     * @var string[] User information
+     */
     private $user;
+
+    /**
+     * @var string[] Input data from the user
+     */
     private $input;
+
+    /**
+     * @var \Monolog\Logger The logger for this instance
+     */
     private $logger;
 
+    /**
+     * Constructor
+     *
+     * Initializes logger, database connector, and reads the current user
+     * information from the session.  There should be a session from Netbadge.
+     */
     public function __construct() {
         global $log;
         $this->logger = new \Monolog\Logger('Helper');
@@ -26,6 +64,15 @@ class Helper {
             die($this->showError());
     }
 
+    /**
+     * Read User
+     *
+     * Reads user data from the database
+     *
+     * @param string $uid The username
+     * @return string[]|null User information including id, name, and admin privileges or null if
+     *                       the user does not exist.
+     */
     public function readUser($uid) {
         $res = $this->db->query("select * from person where uva_id = $1", array($uid));
         $data = $this->db->fetchAll($res);
@@ -41,17 +88,39 @@ class Helper {
         return null;
     }
 
+    /**
+     * Show an exam
+     *
+     * Loads the display data with the current exam, if the user has privileges to take it.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function showExam() {
         // load questions dies with error if student not allowed to take exam
         $this->dData = $this->loadQuestions();
         return $this->display("question"); 
     }
 
+    /**
+     * Show home page
+     *
+     * Shows the home page of the exam software.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function showHome() {
         $this->dData = $this->loadCourses();
         return $this->display("home");
     }
 
+    /**
+     * Create Exam
+     *
+     * Loads the display with the create-exam form if the user is an instructor
+     * of the course.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function newExam() {
         $data = $this->loadCourses();
         $cid = $this->input["course"];
@@ -72,6 +141,13 @@ class Helper {
         die($this->showError("Not Authorized"));
     }
 
+    /**
+     * Create a new Exam
+     *
+     * Given exam data on input, this inserts the exam into the database.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function createExam() {
         $data = $this->loadCourses();
         $cid = $this->input["course"];
@@ -115,6 +191,13 @@ class Helper {
         header("Location: ?");
     }
 
+    /**
+     * Check for Valid Exam
+     *
+     * Checks whether the exam ID given on input is an actual exam
+     * and that the user has permission to modify it.
+     * @return string HTML display data from the templating engine
+     */
     private function checkValidExam() {
         $data = $this->loadCourses();
         $cid = $this->input["course"];
@@ -160,6 +243,12 @@ class Helper {
         return $eid;
     } 
 
+    /**
+     * Open Exam
+     *
+     * Sets the exam to accept submissions from students, then
+     * redirects the user to the home page.
+     */
     public function openExam() {
         $exam = $this->checkValidExam();
 
@@ -169,6 +258,12 @@ class Helper {
         header("Location: ?");
     }
 
+    /**
+     * Close Exam
+     *
+     * Sets the exam to no longer accept submissions from students, then
+     * redirects the user to the home page.
+     */
     public function closeExam() {
         $exam = $this->checkValidExam();
 
@@ -178,6 +273,13 @@ class Helper {
         header("Location: ?");
     }
 
+    /**
+     * Display New Course Page 
+     *
+     * Loads the new course page into the display if the user has admin privilege.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function newCourse() {
         if (!$this->user["admin"])
             die($this->showError("Not Authorized"));
@@ -185,6 +287,13 @@ class Helper {
     }
 
 
+    /**
+     * Create Course
+     *
+     * Given input, this method creates the course and stores it into the database.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function createCourse() {
         $res = $this->db->query("insert into course (uva_id, title, semester, year) values ($1, $2, $3, $4) returning id;", array(
             $this->input["uvaid"], 
@@ -241,6 +350,14 @@ class Helper {
         return $this->showHome();
     }
 
+    /**
+     * Save Exam
+     *
+     * Saves the student exam data given on input and then returns a JSON object
+     * with the success or failure of the save action.
+     *
+     * @param string  JSON response
+     */
     public function handleSaveExam() {
         $result = ["result" => "error", "error"=> "Unknown error occurred"];
         $this->loadQuestions();
@@ -263,6 +380,15 @@ class Helper {
         return json_encode($result, JSON_PRETTY_PRINT);
     }
 
+    /**
+     * Submit Exam
+     *
+     * Submits the student's exam. Uses the handleSaveExam function, then verifies
+     * that the save operation was successful.  It then logs the time the user completed
+     * the exam and loads the display with a unique code for the user.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function handleSubmitExam() {
         $this->logger->addDebug("Submitting exam", $this->input);
         $saved = json_decode($this->handleSaveExam(), true);
@@ -277,6 +403,14 @@ class Helper {
         return $this->display("submitsuccess");
     }
 
+    /**
+     * Grade an Exam
+     *
+     * Given exam data on input, this loads the homepage of the exam grading section.
+     * It shows all the questions of an exam and allows the grader to choose a question to grade.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function gradeExam() {
         $data = $this->loadResults();
         // do grading
@@ -292,6 +426,13 @@ class Helper {
         return $this->display("gradehome");
     }
 
+    /**
+     * Exam Grading Stats
+     *
+     * Displays a stats page for the given exam: how much of each question of the exam is graded?
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function gradeExamStats() {
         $data = $this->loadResults();
         // do grading
@@ -300,6 +441,14 @@ class Helper {
         return $this->display("gradestats");
     }
 
+    /**
+     * Grade One Question
+     *
+     * Checks that the user has permission to grade the given question, then shows the grading interface
+     * for that question.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function gradeOne() {
         $eid = $this->input["e"];
         
@@ -330,10 +479,9 @@ class Helper {
         if (!isset($this->input['q']))
             die($this->showError("No Question"));
 
-        // TODO The select and update NEED TO BE ATOMIC
         $all = [];
         if ($uid == null) {
-            // select one at random
+            // select one at random: This original query was not atomic.
             /*$res = $this->db->query("select pq.person_id, pq.question_id, pq.exam_id,
                 pq.response, pq.feedback, pq.score as current_score, q.text, q.code, q.correct, q.rubric, q.score from person_question pq,
                 question q where pq.score is null and pq.grader is null and 
@@ -341,6 +489,7 @@ class Helper {
                 limit 1;", 
                 [$this->input['q']]);
              */
+            // Select one at random and update to grab it as a grader
             $res = $this->db->query("update person_question set grader = $2 where 
                 (person_id, question_id, exam_id) = 
                 (select pq.person_id, pq.question_id, pq.exam_id
@@ -388,6 +537,7 @@ class Helper {
             }
 
             /*
+            // This was part of the original non-atomic version.
             $res = $this->db->query("update person_question set grader = $3 where 
                 person_id = $1 and question_id = $2;", [
                 $data["person_id"],
@@ -404,6 +554,15 @@ class Helper {
         return $this->display("grade_one");
     }
 
+    /**
+     * Check-in all ungraded questions
+     *
+     * In case a grader has one question checked out, this removes all grader information
+     * for exam questions that do not have a grade.  Allows others to have access to grade
+     * the exam questions through the interface.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function checkinAllUngraded() {
         $eid = $this->input["e"];
         $res = $this->db->query("select 
@@ -435,6 +594,14 @@ class Helper {
         header("Location: ?c=grade&e=".$this->input['e']."&m=checkin");
     }
 
+    /**
+     * Cancel Grading for Question
+     *
+     * Cancels the grading and removes grader information for a question.  This allows a grader
+     * to check-in the question for another grader.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function cancelGrade() {
         // clear the grader for this particular grade/question
         if (!isset($this->input['question']) || !isset($this->input["student"]))
@@ -466,6 +633,14 @@ class Helper {
         return true;
     }
 
+    /**
+     * Save Grade Helper
+     *
+     * Saves the grade for the question on input.  This method
+     * performs the actual saving of the grade.
+     *
+     * @return boolean true if save succeeded, false otherwise
+     */
     private function saveGradeReal() {
         // save the grade into the database 
         if (!isset($this->input['question']) || !isset($this->input["student"]))
@@ -502,6 +677,13 @@ class Helper {
         return true;
     }
 
+    /**
+     * Save Grade and Next
+     *
+     * Saves the grade and displays the next ungraded question.
+     *
+     * @return string HTML display data from the templating engine
+     */
     public function saveNextGrade() {
         $result = $this->saveGradeReal();
 
@@ -515,7 +697,13 @@ class Helper {
         $this->input = ["e" => $eid, "q" => $qid];
         return $this->gradeOne();
     }
-        
+
+    /**
+     * Saves Grade and Stop Grading
+     *
+     * Saves the grade, then redirects the grader to the grading homepage
+     * for the given exam.
+     */   
     public function saveGrade() {
         $result = $this->saveGradeReal();
 
@@ -529,6 +717,17 @@ class Helper {
 
     }
 
+    /**
+     * Load Questions
+     *
+     * Loads all questions for a given exam (either by parameter or input).  Ensures that
+     * the user has permission to load the exam questions.  Sets the timestamp if this was the
+     * first time the user opened this exam.
+     *
+     * @param int $examid optional The exam to load
+     * @param boolean $grading unused parameter
+     * @return string[] Exam data 
+     */
     private function loadQuestions($examid = null, $grading = false) {
         $exam = [];
         $eid = $examid;
@@ -599,6 +798,13 @@ class Helper {
         return $exam;
     }
 
+    /** 
+     * Load Courses
+     *
+     * Loads all courses and exams for the user given on input.
+     *
+     * @return string[] Exam and course data
+     */
     private function loadCourses() {
         $exams = [];
         $res = $this->db->query("select c.title as course, c.year, c.semester, c.uva_id as courseid, c.id, pc.role 
@@ -658,6 +864,15 @@ class Helper {
         return $exams;
     }
 
+    /**
+     * Load Results
+     *
+     * Loads all results for the given exam (either on input or parameter).
+     *
+     * @param int $examid optional The exam id to load
+     * @param int $onlyid optional unused 
+     * @return string[] Exam result data
+     */
     public function loadResults($examid = null, $onlyid = null) {
         $eid = $examid;
         if ($examid == null && !isset($this->input["e"]))
@@ -766,18 +981,34 @@ class Helper {
         }
 
         return ["info" => $examInfo, "exams" => $exams, "questions" => $questions, "recents" => $recents];
-
     }
 
+    /**
+     * Load and Render Display
+     *
+     * Loads the given template into the display and render the final
+     * HTML using Twig.
+     *
+     * @param string $template Template name
+     * @return string final HTML
+     */
     public function display($template) {
         $loader = new \Twig_Loader_Filesystem(\manager\Config::$TEMPLATE_DIR);
         $twig = new \Twig_Environment($loader, array(
             ));
 
         return $twig->render($template . ".html", array("data" => $this->dData, "user" => $this->user));
-    
     }
 
+    /**
+     * Show Error
+     *
+     * Loads an error into the display.
+     *
+     * @param string $str optional The error message to show
+     * @param string[] $data optional Data to display in the error page
+     * @return string HTML display data from the templating engine
+     */
     public function showError($str = "", $data = null) {
         if ($data != null) 
             $this->dData["output"] = json_encode($data, JSON_PRETTY_PRINT);
@@ -786,6 +1017,13 @@ class Helper {
         return $this->display("error");
     }
 
+    /**
+     * Set Input
+     *
+     * Sets the given array into the input field.
+     *
+     * @param string[] Input data
+     */
     public function setInput($input) {
         $this->input = $input;
        // if ($input == null || empty($input))
@@ -793,6 +1031,15 @@ class Helper {
 
     }
 
+    /**
+     * Handle File Upload
+     *
+     * Handles the file upload process given the name of a file, ensuring
+     * that the upload succeeded and is the correct type.
+     *
+     * @param string $name The name of the file being uploaded
+     * @return string The temporary filename on this system
+     */
     public function handleFileUpload($name) {
         if (
             !isset($_FILES[$name]['error']) ||
@@ -834,6 +1081,16 @@ class Helper {
         return $_FILES[$name]['tmp_name'];
     }
 
+    /**
+     * Download Grades
+     *
+     * Packages up the grades and creates a ZIP file compatible with 
+     * UVA Collab for upload.  This creates the grades file, then turns
+     * the submissions into PDFs for the students to view their submissions.
+     *
+     * @param int $onlyid optional currently unused
+     * @return Contents of the created zipfile
+     */
     public function downloadGrades($onlyid = null) {
         $results = $this->loadResults(null, $onlyid);
         $info = $results["info"];
