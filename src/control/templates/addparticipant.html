@@ -77,7 +77,9 @@ textarea {
 
 <div class="container" role="main">
     <h1>Add Participants: {{data.uva_id}}:{{data.title}}</h1>
-    <p>Add participants by pasting them into the box below</p>
+    <p>Add participants by pasting them into the box below as comma separated text values.  There should be <b>one</b> participant per line, with each line containing:</p>
+    <pre>userid,full name</pre>
+    <p>The chosen role will apply to all participants added using this form.</p>
 
     {{ showalert(messages) }}
 

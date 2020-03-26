@@ -112,7 +112,7 @@ body {
               mode: "text/x-python"
           });
       });
-      $("textarea.la-text").each(function() {
+      $("textarea.la-markdown").each(function() {
           var obj = $(this);
           obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
               lineNumbers: true,
@@ -120,6 +120,15 @@ body {
               indentUnit: 4,
               matchBrackets: true,
               mode: "text/x-markdown"
+          });
+      });
+      $("textarea.la-text").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              mode: "text/plain"
           });
       });
 

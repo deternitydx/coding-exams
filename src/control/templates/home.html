@@ -119,7 +119,16 @@ body {
                                     {% endif %}
                                     {% if cdata.role == "Instructor"%}
                                         <td><a href="?c=report&e={{exam.id}}" class="btn btn-xs btn-warning">Exam Report</a></td>
-                                        <td><a href="?c=download&e={{exam.id}}" class="btn btn-xs btn-warning">Download Scores</a></td>
+                                        <td><div class="btn-group">
+                                            <button type="button" class="btn btn-xs btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                Download Scores <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a href="?c=download&e={{exam.id}}">Collab Assignments Package</a></li>
+                                                <li><a href="?c=download&e={{exam.id}}&format=csv-summary">CSV Summary</a></li>
+                                                <li><a href="?c=download&e={{exam.id}}&format=json-summary" target="_blank">JSON Summary</a></li>
+                                            </ul>
+                                            </div></td>
                                         <td>
                                         {% if exam.closed %}
                                             <a href="?c=open_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Open Submissions</a> 

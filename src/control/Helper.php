@@ -1398,14 +1398,87 @@ class Helper {
     public function downloadGrades($onlyid = null) {
         $results = $this->loadResults(null, $onlyid);
         $info = $results["info"];
+        
+        // other formats.  Collab is default.
+        if (isset($this->input["format"])) {
+            
+            if ($this->input["format"] == "csv-summary") {
+                $grades = "UVAID,Name,Score,DateStarted,DateFinished,ElapsedTime,Code\n"; 
+                foreach ($results["exams"] as $exam) {
+                    // only download student grades
+                    if ($exam["role"] !== "Student")
+                        continue;
+
+                    $score = 0;
+                    foreach ($info["questions"] as $q) {
+                        $score += $exam["questions"][$q["id"]]["score"];
+                    }
+
+                    // calculate elapsed time
+                    $elapsed = "Still working";
+                    if (!empty($exam["date_taken"])) {
+                        $start = new \DateTime($exam["date_started"]);
+                        $finish = new \DateTime($exam["date_taken"]);
+                        $elapsed = $start->diff($finish)->format('%H:%I:%S');
+                    }
+                    $grades .= str_putcsv([
+                        $exam["uva_id"],
+                        $exam["name"],
+                        $score,
+                        $exam["date_started"],
+                        $exam["date_taken"],
+                        $elapsed,
+                        $exam["code"],
+                    ])."\n";
+                }
+                header('Content-Type: text/csv');
+                header('Content-disposition: attachment; filename=grade-summary.csv');
+                return $grades;
+            } else if ($this->input["format"] == "json-summary") {
+                $grades = []; 
+                foreach ($results["exams"] as $exam) {
+                    // only download student grades
+                    if ($exam["role"] !== "Student")
+                        continue;
+
+                    $score = 0;
+                    foreach ($info["questions"] as $q) {
+                        $score += $exam["questions"][$q["id"]]["score"];
+                    }
+
+                    // calculate elapsed time
+                    $elapsed = "Still working";
+                    if (!empty($exam["date_taken"])) {
+                        $start = new \DateTime($exam["date_started"]);
+                        $finish = new \DateTime($exam["date_taken"]);
+                        $elapsed = $start->diff($finish)->format('%H:%I:%S');
+                    }
+                    array_push($grades, [
+                        "uva_id" => $exam["uva_id"],
+                        "name" => $exam["name"],
+                        "score" => $score,
+                        "date_taken" => $exam["date_taken"],
+                        "date_started" => $exam["date_started"],
+                        "elapsed" => $elapsed,
+                        "code" => $exam["code"],
+                    ]);
+                }
+                header('Content-Type: application/json');
+                //header('Content-disposition: attachment; filename=grade-summary.csv');
+                return json_encode($grades, JSON_PRETTY_PRINT);
+            }
+        }
+
+        // Default to Collab format
         //$dir = Config::$TEMP_DIR . "/".$results["info"]["title"];
         $zdir = $results["info"]["title"];
         $zip = new \ZipArchive();
-        $zipname = Config::$TEMP_DIR . "/". $info["id"] .".zip";
+        // make the zip file unique
+        $zipname = Config::$TEMP_DIR . "/". $info["id"] . "_" . time() . ".zip";
         $zip->open($zipname, \ZipArchive::CREATE);
         $zip->addEmptyDir($zdir);
 
-        $tmpDir = \manager\Config::$TEMP_DIR."/".$info["id"];
+        $tmpDir = \manager\Config::$TEMP_DIR."/".$info["id"]."_".time();
         if (mkdir($tmpDir) === false)
             die($this->showError("Could not create temp directory"));
 
