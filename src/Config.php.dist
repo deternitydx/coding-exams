@@ -41,4 +41,9 @@ class Config {
      * Log file location
      */
     public static $LOG_FILE = "/PATH/TO/log.txt";
+    
+    /**
+     * Valid roles for participants
+     */
+    public static $VALID_ROLES = ["Student", "Instructor", "Secondary Instructor", "Teaching Assistant"];
 }
