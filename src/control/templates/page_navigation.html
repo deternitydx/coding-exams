@@ -30,3 +30,11 @@
 {% macro footer() %}
 {% endmacro %}
 
+{% macro showalert(messages) %}
+    {% if messages.message %}
+    <div class="alert alert-success">{{messages.message}}</div>
+    {% endif %}
+    {% if messages.error %}
+    <div class="alert alert-danger">{{messages.error}}</div>
+    {% endif %}
+{% endmacro %}

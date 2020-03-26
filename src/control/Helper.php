@@ -38,6 +38,10 @@ class Helper {
      */
     private $input;
 
+    private $displayMessage = null;
+
+    private $displayError = null;
+
     /**
      * @var \Monolog\Logger The logger for this instance
      */
@@ -112,6 +116,140 @@ class Helper {
         $this->dData = $this->loadCourses();
         return $this->display("home");
     }
+    
+    
+    
+    /**
+     * Show Add Participant Form 
+     *
+     * Loads the display with the add-participant form if the user is an instructor
+     * of the course.
+     *
+     * @return string HTML display data from the templating engine
+     */
+    public function showAddParticipant() {
+        $data = $this->loadCourses();
+        $cid = $this->input["course"];
+        $course = null;
+        $allowed = false;
+        foreach ($data as $y) {
+            foreach ($y as $c) {
+                if ($c["id"] == $cid && $c["role"] == "Instructor") {
+                    $allowed = true;
+                    $course = $c;
+                }
+            }
+        }
+        if ($allowed) {
+            $this->dData = $course;
+            return $this->display("addparticipant");
+        }
+        die($this->showError("Not Authorized"));
+    }
+
+
+
+
+
+    private function getValidRoleFrom($inrole) {
+        $role = "Student";
+        if (!empty($inrole)) {
+            if (in_array($inrole, \manager\Config::$VALID_ROLES))
+                $role = $inrole;
+        }
+        return $role;
+    }
+    /**
+     * Add participant to class 
+     *
+     * If the user is an instructor of the course, reads the input and adds the
+     * participants to the course
+     *
+     * @return string HTML display data from the templating engine
+     */
+    public function addParticipant() {
+        $data = $this->loadCourses();
+        $cid = $this->input["course"];
+        $course = null;
+        $allowed = false;
+        foreach ($data as $y) {
+            foreach ($y as $c) {
+                if ($c["id"] == $cid && $c["role"] == "Instructor") {
+                    $allowed = true;
+                    $course = $c;
+                }
+            }
+        }
+        if ($allowed) {
+            $this->dData = $course;
+
+            // input check
+            if (!isset($this->input["participants"]) || empty($this->input["participants"]) || empty($this->input["role"])) {
+                $this->setError("No Participants Given");
+                die($this->showAddParticipant());
+            }
+
+            $role = $this->getValidRoleFrom($this->input["role"]);
+            $count = 0;
+
+            // parse the list and add participants
+            $tmp = str_getcsv($this->input["participants"], "\n");
+            foreach ($tmp as $row) {
+                $participant = str_getcsv(trim($row));
+
+                if (isset($participant[0]) && !empty($participant[0])) {
+                    $uvaid = trim($participant[0]);
+                    $name = "";
+                    if (isset($participant[1]))
+                        $name = trim($participant[1]);
+
+                    // See if the person already exists from another class
+                    $resP = $this->db->query("select id from person where uva_id = $1", [
+                        $uvaid
+                    ]);
+                    $allP = $this->db->fetchAll($resP);
+
+                    // If person doesn't exist in the person table, create them (non-administrator) 
+                    if (!(isset($allP[0]) && isset($allP[0]["id"]))) {
+                        $resP = $this->db->query("insert into person (uva_id, name) values ($1, $2) returning id;",
+                            [
+                                $uvaid,
+                                $name
+                            ]
+                        );
+                        $allP = $this->db->fetchAll($resP);
+                        if (count($allP) != 1) {
+                            die($this->showError("Database Error"));
+                        }
+                    }
+                    $pid = $allP[0]["id"];
+
+                    // Add the person to this course with the appropriate role
+                    $resPC = $this->db->query("insert into person_course (course_id, person_id, role) values ($1, $2, $3);", [
+                        $course["id"],
+                        $pid,
+                        $this->input["role"]
+                    ]);
+                    $count++;
+                }
+
+            }
+
+            $this->setMessage("$count participants add as $role");
+
+            return $this->showAddParticipant();
+
+        }
+        die($this->showError("Not Authorized"));
+    }
+
+    private function setError($message) {
+        $this->displayError = $message;
+    }
+
+    private function setMessage($message) {
+        $this->displayMessage = $message;
+    }
 
     /**
      * Create Exam
@@ -136,6 +274,9 @@ class Helper {
         }
         if ($allowed) {
             $this->dData = $course;
+            if (isset($this->input["exam"])) {
+                $this->dData["examdata"] = $this->loadResults($this->input["exam"], null);
+            }
             return $this->display("newexam");
         }
         die($this->showError("Not Authorized"));
@@ -165,10 +306,18 @@ class Helper {
             die($this->showError("Not Authorized"));
         }
         // create the exam
-        $res = $this->db->query("insert into exam (course_id, title) values ($1, $2) returning id;", array(
-            $course["id"],
-            $this->input["name"]
-        ));
+        if (!isset($this->input["exam"]) || empty($this->input["exam"])) {
+            $res = $this->db->query("insert into exam (course_id, title) values ($1, $2) returning id;", array(
+                $course["id"],
+                $this->input["name"]
+            ));
+        } else {
+            $res = $this->db->query("update exam set title = $3 where course_id = $1 and id = $2 returning id;", array(
+                $course["id"],
+                $this->input["exam"],
+                $this->input["name"]
+            ));
+        }
         $tmp = $this->db->fetchAll($res);
         if (count($tmp) != 1) {
             die($this->showError("Database Error"));
@@ -176,16 +325,30 @@ class Helper {
         $eid = $tmp[0]["id"];
 
         foreach ($this->input["question"] as $k => $q) {
-            $res = $this->db->query("insert into question (exam_id, ordering, text, code, correct, rubric, score) values ($1, $2, $3, $4, $5, $6, $7);",
-                [
-                    $eid,
-                    $k, 
-                    $q, 
-                    isset($this->input["code"][$k]) ? $this->input["code"][$k] : "",
-                    isset($this->input["answer"][$k]) ? $this->input["answer"][$k] : "",
-                    isset($this->input["rubric"][$k]) ? $this->input["rubric"][$k] : "",
-                    isset($this->input["score"][$k]) ? $this->input["score"][$k] : 0
-                ]);
+            if (!isset($this->input["questionid"][$k]) || empty($this->input["questionid"][$k])) {
+                $res = $this->db->query("insert into question (exam_id, ordering, text, code, correct, rubric, language, score) values ($1, $2, $3, $4, $5, $6, $7, $8);",
+                    [
+                        $eid,
+                        $k, 
+                        $q, 
+                        isset($this->input["code"][$k]) ? $this->input["code"][$k] : "",
+                        isset($this->input["answer"][$k]) ? $this->input["answer"][$k] : "",
+                        isset($this->input["rubric"][$k]) ? $this->input["rubric"][$k] : "",
+                        isset($this->input["language"][$k]) ? $this->input["language"][$k] : "java",
+                        isset($this->input["score"][$k]) ? $this->input["score"][$k] : 0
+                    ]);
+            } else {
+                $res = $this->db->query("update question set (text, code, correct, rubric, language, score) = ($1, $2, $3, $4, $5, $6) where id = $7;",
+                    [
+                        $q, 
+                        isset($this->input["code"][$k]) ? $this->input["code"][$k] : "",
+                        isset($this->input["answer"][$k]) ? $this->input["answer"][$k] : "",
+                        isset($this->input["rubric"][$k]) ? $this->input["rubric"][$k] : "",
+                        isset($this->input["language"][$k]) ? $this->input["language"][$k] : "java",
+                        isset($this->input["score"][$k]) ? $this->input["score"][$k] : 0,
+                        $this->input["questionid"][$k]
+                    ]);
+            }
         } 
 
         header("Location: ?");
@@ -295,6 +458,14 @@ class Helper {
      * @return string HTML display data from the templating engine
      */
     public function createCourse() {
+        if (!$this->user["admin"])
+            die($this->showError("Not Authorized"));
+        
+        // Try to get the file first so that we don't have too many new courses in the DB
+        $fn = $this->handleFileUpload("roster");
+        
+
+        // Create the course in the database 
         $res = $this->db->query("insert into course (uva_id, title, semester, year) values ($1, $2, $3, $4) returning id;", array(
             $this->input["uvaid"], 
             $this->input["name"],
@@ -306,8 +477,16 @@ class Helper {
             die($this->showError("Database Error"));
         }
         $cid = $tmp[0]["id"];
-        
-        $fn = $this->handleFileUpload("roster");
+
+        // Insert the instructor first!
+        $resPC = $this->db->query("insert into person_course (course_id, person_id, role) values ($1, $2, $3);", [
+            $cid,
+            $this->user["id"],
+            "Instructor"
+        ]);
+
+
+        // Insert students from the roster
         $fp = fopen($fn, 'r');
         $i = 0;
         while (($line = fgetcsv($fp, 1000, ",")) !== FALSE) {
@@ -318,6 +497,9 @@ class Helper {
                 // $line[0] = name
                 // $line[1] = uva_id
                 // $line[3] = role    
+                if ($this->user["uva_id"] == $line[1])
+                    continue; // this is the instructor creating the course, ignore
+
                 $resP = $this->db->query("select id from person where uva_id = $1", [
                     $line[1]
                 ]);
@@ -775,7 +957,8 @@ class Helper {
             $exam["questions"][$row["ordering"]] = [
                 "id" => $row["id"],
                 "text" => $row["text"],
-                "code" => $row["code"]
+                "code" => $row["code"],
+                "language" => $row["language"]
             ];
 
             $res2 = $this->db->query("select pq.response from person_question pq where pq.person_id = $1
@@ -864,6 +1047,25 @@ class Helper {
         return $exams;
     }
 
+    public function isInstructor($userid, $examid) {
+        $res = $this->db->query("select 
+            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
+                pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
+                and e.id = $2", 
+            [$userid, $examid]);
+        $all = $this->db->fetchAll($res);
+        $allowed = false;
+        foreach ($all as $row) {
+            if ($row["id"] == $examid) {
+                $allowed = true;
+                $examInfo = $row;
+                break;
+            }
+        }
+        return $allowed;
+    }
+
     /**
      * Load Results
      *
@@ -881,7 +1083,6 @@ class Helper {
         if ($examid == null)
             $eid = $this->input["e"];
         
-        $examInfo = [];
         $res = $this->db->query("select 
             e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
@@ -911,6 +1112,7 @@ class Helper {
                 "code" => $row["code"],
                 "correct" => $row["correct"],
                 "rubric" => $row["rubric"],
+                "language" => $row["language"],
                 "score" => $row["score"]
             ];
         }
@@ -958,14 +1160,20 @@ class Helper {
         foreach ($examInfo["questions"] as &$qinfo) {
             $total = 0;
             $graded = 0;
-            foreach ($questions[$qinfo["id"]]["answers"] as $row) {
-                if ($row["score"] != "")
-                    $graded++;
-                $total++;
+            if (isset($questions[$qinfo["id"]]["answers"])) { 
+                foreach ($questions[$qinfo["id"]]["answers"] as $row) {
+                    if ($row["score"] != "")
+                        $graded++;
+                    $total++;
+                }
+                $qinfo["total"] = $total;
+                $qinfo["graded"] = $graded;
+                $qinfo["percent"] = round(100*($graded/$total),0,PHP_ROUND_HALF_DOWN);
+            } else {
+                $qinfo["total"] = 0;
+                $qinfo["graded"] = 0;
+                $qinfo["percent"] = 0;
             }
-            $qinfo["total"] = $total;
-            $qinfo["graded"] = $graded;
-            $qinfo["percent"] = round(100*($graded/$total),0,PHP_ROUND_HALF_DOWN);
         }
         // do not use qinfo again in this method, or call unset below first
         //unset($qinfo);
@@ -995,9 +1203,11 @@ class Helper {
     public function display($template) {
         $loader = new \Twig_Loader_Filesystem(\manager\Config::$TEMPLATE_DIR);
         $twig = new \Twig_Environment($loader, array(
-            ));
+        ));
 
-        return $twig->render($template . ".html", array("data" => $this->dData, "user" => $this->user));
+        $messages = ["message" => $this->displayMessage, "error" => $this->displayError];
+
+        return $twig->render($template . ".html", array("data" => $this->dData, "user" => $this->user, "messages" => $messages));
     }
 
     /**
@@ -1074,11 +1284,105 @@ class Helper {
             ),
             true
         )) {
-            echo $finfo->file($_FILES[$name]['tmp_name']);
+            echo "Error: Invalid upload file format: " . $finfo->file($_FILES[$name]['tmp_name']);
             throw new \RuntimeException('Invalid file format.');
         }
 
         return $_FILES[$name]['tmp_name'];
+    }
+
+    public function showGrades($examid = null) {
+        $eid = $examid;
+        if ($examid == null && !isset($this->input["e"]))
+            die($this->showError("Unknown Exam"));
+
+        if ($examid == null)
+            $eid = $this->input["e"];
+
+        if (!$this->isInstructor($this->user["id"], $eid))
+            die($this->showError("You do not have permissions to view this exam"));
+        
+        $results = $this->loadResults($eid);
+        $info = $results["info"];
+
+        $grades = []; 
+        foreach ($results["exams"] as $exam) {
+            // only download student grades
+            if ($exam["role"] !== "Student")
+                continue;
+
+            $score = 0;
+            foreach ($info["questions"] as $q) {
+                $score += $exam["questions"][$q["id"]]["score"];
+            }
+
+            // calculate elapsed time
+            $elapsed = "Still working";
+            if (!empty($exam["date_taken"])) {
+                $start = new \DateTime($exam["date_started"]);
+                $finish = new \DateTime($exam["date_taken"]);
+                $elapsed = $start->diff($finish)->format('%H:%I:%S');
+            }
+            array_push($grades, [
+                "uva_id" => $exam["uva_id"],
+                "name" => $exam["name"],
+                "score" => $score,
+                "date_taken" => $exam["date_taken"],
+                "date_started" => $exam["date_started"],
+                "elapsed" => $elapsed,
+                "code" => $exam["code"],
+            ]);
+        }
+
+        $this->dData = ["grades" => $grades, "info" => $info];
+        return $this->display("grades");
+    }
+
+
+    public function showReport($examid = null) {
+        $eid = $examid;
+        if ($examid == null && !isset($this->input["e"]))
+            die($this->showError("Unknown Exam"));
+
+        if ($examid == null)
+            $eid = $this->input["e"];
+
+        if (!$this->isInstructor($this->user["id"], $eid))
+            die($this->showError("You do not have permissions to view this exam"));
+
+        $examInfo = []; 
+        $res = $this->db->query("select 
+            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
+                pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
+                and e.id = $2", 
+            [$this->user["id"], $eid]);
+        $all = $this->db->fetchAll($res);
+        foreach ($all as $row) {
+            if ($row["id"] == $eid) {
+                $allowed = true;
+                $examInfo = $row;
+                break;
+            }
+        }
+
+        $res = $this->db->query("select p.uva_id, p.name from person p, person_course pc where p.id = pc.person_id and pc.course_id = (select course_id from exam where id = $1) and pc.role = 'Student' and p.id not in (select person_id from person_exam pe where pe.exam_id = $1) order by name;", 
+            [$eid]);
+        $missing = $this->db->fetchAll($res);
+        
+        $res = $this->db->query("select p.uva_id, p.name, pe.date_started from person p, person_exam pe where p.id = pe.person_id and pe.exam_id = $1 and pe.date_taken is null;", 
+            [$eid]);
+        $unsubmitted = $this->db->fetchAll($res);
+        
+        $res = $this->db->query("select p.uva_id, p.name, pe.code, pe.date_taken-pe.date_started as elapsed_time, pe.date_taken from person p, person_exam pe where pe.exam_id = $1 and p.id = pe.person_id order by date_taken-date_started asc;", 
+            [$eid]);
+        $timings = $this->db->fetchAll($res);
+
+        
+        $this->dData = ["info" => $examInfo, "missing" => $missing, "unsubmitted" => $unsubmitted, "timings" => $timings];
+        return $this->display("report");
+
+
     }
 
     /**

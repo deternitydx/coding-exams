@@ -104,6 +104,19 @@ switch ($command) {
     case "download":
         echo $helper->downloadGrades();
         break;
+    case "report":
+        echo $helper->showReport();
+        break;
+    case "add_participant":
+        echo $helper->showAddParticipant();
+        break;
+    case "add_participant_post":
+        echo $helper->addParticipant();
+        break;
+    case "show_grades":
+        echo $helper->showError("This feature is currently disabled", []);
+        //echo $helper->showGrades();
+        break;
     default:
         echo $helper->showHome();
         break;

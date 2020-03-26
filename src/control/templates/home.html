@@ -67,16 +67,27 @@ body {
     <h1>Code-Based Exams</h1>
     <p>Hello, <span style="font-weight: bold;">{{user.name}}</span>!  You have the following actions available.</p>
 
+
+    {% if data.message %}
+    <div class="alert alert-success">{{data.message}}</div>
+    {% endif %}
+    {% if data.error %}
+    <div class="alert alert-danger">{{data.error}}</div>
+    {% endif %}
+
     <div class="row">
         <div class="col-md-12" id="accordian">
+            {% set i = 0 %}
             {% for year, ydata in data %}
             <h3 style="border-bottom: 1px solid #ccc;">{{year}}</h3>
-                {% set i = 0 %}
                 {% for course, cdata in ydata %}
                     <div class="panel panel-default">
                         <div class="panel-heading" role="tab" id="heading{{i}}">
                             <div class="btn-group pull-right">
                                 {% if cdata.role == "Instructor" %}
+                                <a href="?c=add_participant&course={{cdata.id}}" class='btn btn-sm btn-info'>
+                                    <i class="fa fa-user" aria-hidden="true"></i>
+                                    Add Participant</a>&nbsp;
                                 <a href="?c=new_exam&course={{cdata.id}}" class='btn btn-sm btn-success'>
                                     <i class="fa fa-plus" aria-hidden="true"></i>
                                     Create New Exam</a>
@@ -107,6 +118,7 @@ body {
                                         <td><a href="?c=grade&e={{exam.id}}" class="btn btn-xs btn-success">Grade Exam</a></td>
                                     {% endif %}
                                     {% if cdata.role == "Instructor"%}
+                                        <td><a href="?c=report&e={{exam.id}}" class="btn btn-xs btn-warning">Exam Report</a></td>
                                         <td><a href="?c=download&e={{exam.id}}" class="btn btn-xs btn-warning">Download Scores</a></td>
                                         <td>
                                         {% if exam.closed %}
@@ -115,6 +127,7 @@ body {
                                             <a href="?c=close_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Close Submissions</a> 
                                         {% endif %}
                                         </td>
+                                        <td><a href="?c=new_exam&exam={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-info">Edit Exam</a></td>
                                     {% endif %}
                                 </tr>
                                 {% endfor %}

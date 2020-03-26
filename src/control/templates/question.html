@@ -31,6 +31,8 @@
 <script src="js/codemirror/addon/edit/matchbrackets.js"></script>
 <link rel="stylesheet" href="js/codemirror/addon/hint/show-hint.css">
 <script src="js/codemirror/addon/hint/show-hint.js"></script>
+<script src="js/codemirror/mode/python/python.js"></script>
+<script src="js/codemirror/mode/markdown/markdown.js"></script>
 <script src="js/clike.js"></script>
 
 <meta charset="utf-8"/>
@@ -63,12 +65,15 @@ body {
         <div>{{question.text|raw}}</div>
         <input type="hidden" name="q[]" value="{{question.id}}">
         <div style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #000">
-            <textarea name="response[]" style="width: 100%; height: 100%;">{{question.code}}</textarea>
+            <textarea name="response[]" class="la-{{question.language}}" style="width: 100%; height: 100%;">{{question.code}}</textarea>
         </div>
         {% set i = i + 1 %}
     {% endfor %}
     <div class="row" style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; margin-top: 10px; margin-bottom: 30px;">
         <div class="col-md-8">
+            <div class="" id="autosave-message">
+                <p>Last saved: <span id="autosave-time">never</span></p>
+            </div>
             <div class="alert alert-01 alert-warning" id="notification-message" style="display: none">
                 <p></p>
             </div><!-- end alert -->
@@ -87,7 +92,7 @@ body {
 </form>
 <script>
       var submitting = false;
-      $("textarea").each(function() {
+      $("textarea.la-java").each(function() {
           var obj = $(this);
           obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
               lineNumbers: true,
@@ -95,6 +100,26 @@ body {
               indentUnit: 4,
               matchBrackets: true,
               mode: "text/x-java"
+          });
+      });
+      $("textarea.la-python").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              matchBrackets: true,
+              mode: "text/x-python"
+          });
+      });
+      $("textarea.la-text").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              matchBrackets: true,
+              mode: "text/x-markdown"
           });
       });
 
@@ -108,11 +133,12 @@ body {
           });
       }
 
-      function save() {
-            // Open up the warning alert box and note that we are saving
-            $('#notification-message').html("<p>Saving answer... Please wait.</p>");
-            $('#notification-message').slideDown();
-          
+      function save(autosave) {
+            if (!autosave) {
+                // Open up the warning alert box and note that we are saving
+                $('#notification-message').html("<p>Saving answer... Please wait.</p>");
+                $('#notification-message').slideDown();
+            }
             saveTextAreas();  
 
             // Send the data back by AJAX call
@@ -120,15 +146,25 @@ body {
                 // Check the return value from the ajax. If success, then alert the
                 // user and make appropriate updates.
                 if (data.result == "success") {
-                    $('#notification-message').slideUp();
-                    // Show the success alert
-                    $('#success-message').html("<p>Saved successfully!</p>");
-                    setTimeout(function(){
-                        $('#success-message').slideDown();
-                    }, 1000);
-                    setTimeout(function(){
-                        $('#success-message').slideUp();
-                    }, 3000);
+                    var currentdate = new Date(); 
+                    var datetime = (currentdate.getMonth()+1)  + "/"
+                                    + currentdate.getDate() + "/" 
+                                    + currentdate.getFullYear() + " "  
+                                    + currentdate.getHours() + ":"  
+                                    + currentdate.getMinutes() + ":" 
+                                    + currentdate.getSeconds();
+                    $("#autosave-time").text(datetime);
+                    if (!autosave) {
+                        $('#notification-message').slideUp();
+                        // Show the success alert
+                        $('#success-message').html("<p>Saved successfully!</p>");
+                        setTimeout(function(){
+                            $('#success-message').slideDown();
+                        }, 1000);
+                        setTimeout(function(){
+                            $('#success-message').slideUp();
+                        }, 3000);
+                    }
                 } else {
                     $('#notification-message').slideUp();
                     // Something went wrong in the ajax call. Show an error.
@@ -140,8 +176,14 @@ body {
             });
       }
 
+        // Autosave
+        var autosave = function() {
+            save(true);
+        }
+        var autosavetimout = setInterval(autosave, 300000);
+
         $('#save').click(function(){
-            save();
+            save(false);
             return false;
         });
 

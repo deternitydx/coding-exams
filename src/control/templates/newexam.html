@@ -31,6 +31,8 @@
 <script src="js/codemirror/addon/edit/matchbrackets.js"></script>
 <link rel="stylesheet" href="js/codemirror/addon/hint/show-hint.css">
 <script src="js/codemirror/addon/hint/show-hint.js"></script>
+<script src="js/codemirror/mode/python/python.js"></script>
+<script src="js/codemirror/mode/markdown/markdown.js"></script>
 <script src="js/clike.js"></script>
 
 <link href="//cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.css" rel="stylesheet">
@@ -74,7 +76,11 @@ textarea {
 {{ topNavigation(user) }}
 
 <div class="container" role="main">
+    {% if data.examdata.info.id %}
+    <h1>Edit Exam: {{data.uva_id}}:{{data.title}}</h1>
+    {% else %}
     <h1>New Exam: {{data.uva_id}}:{{data.title}}</h1>
+    {% endif %}
     <p>Fill out the form below to create a new exam.</p>
 
     <div class="row">
@@ -82,10 +88,48 @@ textarea {
 
             <form method="POST" action="?c=create_exam">
                 <input type="hidden" name="course" value="{{data.id}}">
+                <input type="hidden" name="exam" value="{{data.examdata.info.id}}">
                 <div class="form-group">
                     <label for="name">Name</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Exam Name">
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Exam Name" value="{{data.examdata.info.title}}">
                 </div>
+                {% if data.examdata.info.questions %}
+                {% for question in data.examdata.info.questions %}
+                <div class="question-group">
+                    <h3>Question</h3>
+                    <input type="hidden" name="questionid[]" value="{{question.id}}">
+                    <div class="form-group">
+                        <label for="question[]">Text (use HTML tags)</label>
+                        <textarea name="question[]" class="htmltext">{{question.text}}</textarea>
+                        <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="language[]">Syntax Highlight Language</label>
+                        <select name="language[]" class="language">
+                            <option {{ (question.language == 'java') ? "selected" : ""}} value="java">Java</option>
+                            <option {{ (question.language == 'python') ? "selected" : ""}} value="python">Python</option>
+                            <option {{ (question.language == 'text') ? "selected" : ""}} value="text">Plain Text</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
+                        <textarea name="code[]" class="codetext">{{question.code}}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="answer[]">Answer (Syntax Highlighted)</label>
+                        <textarea name="answer[]" class="codetext">{{question.correct}}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="rubric[]">Rubric (Text Only)</label>
+                        <textarea name="rubric[]" class="textonly">{{question.rubric}}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="score[]">Max Points</label>
+                        <input type="text" class="form-control" name="score[]" placeholder="" value="{{question.score}}">
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
                 <div class="question-group">
                     <h3>Question</h3>
                     <div class="form-group">
@@ -94,11 +138,19 @@ textarea {
                         <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
                     </div>
                     <div class="form-group">
-                        <label for="code[]">Code (Java Syntax Highlighted)</label>
+                        <label for="language[]">Syntax Highlight Language</label>
+                        <select name="language[]" class="language">
+                            <option selected value="java">Java</option>
+                            <option value="python">Python</option>
+                            <option value="text">Plain Text</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
                         <textarea name="code[]" class="codetext"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="answer[]">Answer (Java Syntax Highlighted)</label>
+                        <label for="answer[]">Answer (Syntax Highlighted)</label>
                         <textarea name="answer[]" class="codetext"></textarea>
                     </div>
                     <div class="form-group">
@@ -110,10 +162,15 @@ textarea {
                         <input type="text" class="form-control" name="score[]" placeholder="">
                     </div>
                 </div>
+                {% endif %}
 
                 <button id="addquestion" class="btn btn-primary">Add Question</button>
                 &nbsp; 
+                {% if data.examdata.info.id %}
+                <button id="submit" type="submit" class="btn btn-default">Update Exam</button>
+                {% else %}
                 <button id="submit" type="submit" class="btn btn-default">Create Exam</button>
+                {% endif %}
             </form>
         </div>
     </div>
@@ -135,7 +192,7 @@ textarea {
       loadTextareas();
 
       function loadTextareas() {
-          $("textarea.textonly").each(function() {
+          $(".container").find("textarea.textonly").each(function() {
               var obj = $(this);
               if (!obj.get(0).CodeMirror) {
                   obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
@@ -144,7 +201,7 @@ textarea {
                   });
               }
           });
-          $("textarea.htmltext").each(function() {
+          $(".container").find("textarea.htmltext").each(function() {
               var obj = $(this);
               if (!obj.get(0).SummerNote) {
                   obj.get(0).SummerNote = obj.summernote({
@@ -178,7 +235,7 @@ textarea {
               }
           });
           */
-          $("textarea.codetext").each(function() {
+          $(".container").find("textarea.codetext").each(function() {
               var obj = $(this);
               if (!obj.get(0).CodeMirror) {
                   obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
@@ -192,21 +249,48 @@ textarea {
           });
       }
 
+      function updateCodemirrors() {
+          $(".container").find("textarea.codetext").each(function() {
+              var obj = $(this);
+              var mode = "text/x-java";
+              var tmp = obj.closest(".question-group").find(".language").children("option:selected").val();
+              console.log(tmp);
+              if (tmp == "text")
+                  mode = "text/x-markdown";
+              if (tmp == "python")
+                  mode = "text/x-python";
+              if (obj.get(0).CodeMirror) {
+                  obj.get(0).CodeMirror.setOption("mode", mode);
+              }
+          });
+      }
 
         $('#addquestion').click(function(){
             var text = $('#questiontemplate').clone();
             var html = text.html();
             $('#addquestion').before(html);
             loadTextareas();
+            $(".language").off("change").change(function() {
+                updateCodemirrors();
+            });
             return false;
         });
 
         $('#submit').click(function(){
-            javaEditor.save();
+            //javaEditor.save();
+            $("textarea.codetext").each(function() {
+                var obj = $(this);
+                if (obj.get(0).CodeMirror) {
+                    obj.get(0).CodeMirror.save();
+                }
+            });
             return true;
         });
 
 
+        $(".language").change(function() {
+            updateCodemirrors();
+        });
 
 
     </script>
@@ -220,11 +304,19 @@ textarea {
                         <textarea name="question[]" class="htmltext"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="code[]">Code (Java Syntax Highlighted)</label>
+                        <label for="language[]">Syntax Highlight Language</label>
+                        <select name="language[]" class="language">
+                            <option selected value="java">Java</option>
+                            <option value="python">Python</option>
+                            <option value="text">Plain Text</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
                         <textarea name="code[]" class="codetext"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="answer[]">Answer (Java Syntax Highlighted)</label>
+                        <label for="answer[]">Answer (Syntax Highlighted)</label>
                         <textarea name="answer[]" class="codetext"></textarea>
                     </div>
                     <div class="form-group">

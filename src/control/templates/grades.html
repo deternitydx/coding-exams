@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Error</title>
+    <title>Exam Grade Report</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<!-- DataTables -->
+<link rel="stylesheet" href="//cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+<script src="//cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
 
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
@@ -36,24 +40,33 @@
 <meta charset="utf-8"/>
 <style>
 .CodeMirror {
-    height: 500px;
+    height: 300px;
+        border: 1px solid #000;
 }
 body {
     margin-top: 70px;
     margin-bottom: 70px;
 }
-
-/* centered columns styles */
-.row-centered {
-    text-align:center;
+textarea {
+    width: 100%;
 }
-.col-centered {
-    display:inline-block;
-    float:none;
-    /* reset the text-align */
-    text-align:left;
-    /* inline-block space fix */
-    margin-right:-4px;
+.question-group .form-group {
+    margin-left: 20px;
+        margin-right: 20px;
+}
+
+.indented {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.recents {
+    padding-right: 8px;
+}
+
+.panel-title {
+    padding-top: 5px;
+        padding-bottom: 5px;
 }
 </style>
 </head>
@@ -63,28 +76,48 @@ body {
 {{ topNavigation(user) }}
 
 <div class="container" role="main">
-    <div class="row row-centered">
-        <div class="col-md-2 col-centered">
-            <p class="text-center" style="font-size:240px; color: #F5A9A9;"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></p>
-        </div>
-        <div class="col-md-4 col-centered">
-            <h2>An Error Has Occurred</h2>
+    <h1>{{data.info.title}}: Grades</h1>
+    <p>Grade data for this exam</p>
 
-            <p>{{data.error ? data.error : 'Not Authorized'}}</p>
-
-            {% if data.output %}
-            <pre>
-            {{data.output}}
-            </pre>
-            {% endif %}
+    <div class="row">
+        <div class="col-md-12">
+            <table id="table1" class="display">
+                <thead>
+                    <tr>
+                        <th>Computing ID</th>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Elapsed Time</th>
+                        <th>Code</th>
+                    </tr>
+                </thead><tbody>
+            {% for grade in data.grades %}
+                <tr>
+                    <td>{{grade.uva_id}}</td>
+                    <td>{{grade.name}}</td>
+                    <td>{{grade.score}}</td>
+                    <td>{{grade.date_started}}</td>
+                    <td>{{grade.date_taken}}</td>
+                    <td>{{grade.elapsed}}</td>
+                    <td>{{grade.code}}</td>
+                </tr>
+            {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
+    <script>
+        $(document).ready( function () {
+            $('#table1').DataTable({
+              "pageLength": 100
+            });
+        } );
+    </script>
 
-</div>
-
-
-
-{{ footer() }}
 </body>
 </html>
+
+
