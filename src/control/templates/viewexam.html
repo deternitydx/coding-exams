@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Exam View</title>
+
+<!-- JQuery -->
+<script src="js/jquery-3.5.1.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="js/codemirror/lib/codemirror.css">
+<script src="js/codemirror/lib/codemirror.js"></script>
+<script src="js/codemirror/addon/edit/matchbrackets.js"></script>
+<link rel="stylesheet" href="js/codemirror/addon/hint/show-hint.css">
+<script src="js/codemirror/addon/hint/show-hint.js"></script>
+<script src="js/codemirror/mode/python/python.js"></script>
+<script src="js/codemirror/mode/markdown/markdown.js"></script>
+<script src="js/clike.js"></script>
+
+<meta charset="utf-8"/>
+<style>
+.CodeMirror {
+    /*height: 500px;*/
+    height: auto;
+}
+body {
+    margin-top: 70px;
+    margin-bottom: 70px;
+    /*background-color: #e7e7ff;*/
+}
+</style>
+</head>
+
+<body role="document">
+{% from 'page_navigation.html' import topNavigation,footer %}
+{{ topNavigation(user) }}
+
+<div class="container" role="main">
+    <ol class="breadcrumb">
+         <li><a href="?">Home</a></li>
+         <li><a href="?c=full_report&e={{data.info.id}}">{{data.info.title}} Exam Report</a></li>
+           <li class="active">View Exam</li>
+    </ol> 
+    <h1>{{data.exam.name}} ({{data.exam.uva_id}})</h1>
+    <div class="row">
+        <div class="col-md-10">
+            {% if data.info.instructions %}
+            <div class="well well-lg">{{data.info.instructions|raw}}</div>
+            {% endif %}
+        </div>
+        <div class="col-md-2">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Overview
+                </div>
+                <div class="panel-body">
+                    <table style="border: 0px; width: 100%;">
+                    {% set i = 1%}
+                    {% for qid, question in data.exam.questions %}
+                        <tr><td><a href="#qn{{i}}">Question {{i}}</a></td><td style="text-align: right;">{{question.score}}</td></tr>    
+                        {% set i = i + 1 %}
+                    {% endfor %}
+                    <tr><td><b>Total</b></td><td style="text-align: right;">{{data.exam.score}}</td></tr>    
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% set i = 1%}
+    {% for qid, question in data.exam.questions %}
+    <h3 style="padding-top: 50px;" id="qn{{i}}">Question {{i}}</h3>    
+        <div>{{data.questions[qid].text|raw}}</div>
+        <div style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #000; margin-top:20px;">
+            <textarea name="response[]" class="la-{{data.questions[qid].language}}" style="width: 100%; height: 100%;">{{question.response}}</textarea>
+        </div>
+        <div><p><b>Score: {{question.score}} / {{data.questions[qid].score}}</b></p>
+        <p><b>Grader Feedback:</b><br/> {{question.feedback}}</p></div>
+        {% set i = i + 1 %}
+    {% endfor %}
+
+<script>
+      var submitting = false;
+      var lastsave = false;
+      $("textarea.la-java").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              viewportMargin: Infinity,
+              matchBrackets: true,
+              mode: "text/x-java",
+              readOnly: true
+          });
+      });
+      $("textarea.la-python").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              viewportMargin: Infinity,
+              matchBrackets: true,
+              mode: "text/x-python",
+              readOnly: true
+          });
+      });
+      $("textarea.la-markdown").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              viewportMargin: Infinity,
+              matchBrackets: true,
+              mode: "text/x-markdown",
+              readOnly: true
+          });
+      });
+      $("textarea.la-text").each(function() {
+          var obj = $(this);
+          obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
+              lineNumbers: true,
+              tabSize: 4,
+              indentUnit: 4,
+              viewportMargin: Infinity,
+              mode: "text/plain",
+              readOnly: true
+          });
+      });
+
+    </script>
+{{ footer() }}
+</body>
+</html>

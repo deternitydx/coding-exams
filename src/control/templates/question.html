@@ -38,7 +38,8 @@
 <meta charset="utf-8"/>
 <style>
 .CodeMirror {
-    height: 500px;
+    /*height: 500px;*/
+    height: auto;
 }
 body {
     margin-top: 70px;
@@ -50,11 +51,47 @@ body {
 
 <body role="document">
 {% from 'page_navigation.html' import topNavigation,footer %}
-{{ topNavigation(user) }}
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand active" href="?">Home</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                {% if user.admin %}
+                    <li><a href="?c=new_course">New Course</a></li>
+                {% endif %}
+            </ul>
+            <div class="navbar-right">
+                <ul class="nav navbar-nav">
+                    {% if data.info.time_allowed %}
+                    <li>
+                        <div class="progress" style="margin-top: 15px; margin-bottom: 15px; width: 400px; text-align: center;">
+                            <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuenow="{{data.info.time.percleft}}" aria-valuemin="0" aria-valuemax="100" style="width: {{data.info.time.percleft}}%;">
+                            </div>
+                            <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;">{{ data.info.time.left }} minutes remaining</span>
+                        </div>
+                    </li>
+                    {% endif %}
+                    <li><a href="#"><i class="fa fa-user-circle" aria-hidden="true"></i> {{user.name}}</a></li>
+                </ul>
+            </div>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
 
 <div class="container" role="main">
     <h1>{{data.title}}: {{user.name}} ({{user.uva_id}})</h1>
 
+    {% if data.instructions %}
+    <div class="well well-lg">{{data.instructions|raw}}</div>
+    {% endif %}
 
 <form id="questionform" name="questionform" method="post" action="?c=submit_exam">
     <input type="hidden" name="e" value="{{data.id}}">
@@ -64,7 +101,7 @@ body {
     <h3>Question {{i}}</h3>    
         <div>{{question.text|raw}}</div>
         <input type="hidden" name="q[]" value="{{question.id}}">
-        <div style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #000">
+        <div style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #000; margin-top:20px; margin-bottom:40px;">
             <textarea name="response[]" class="la-{{question.language}}" style="width: 100%; height: 100%;">{{question.code}}</textarea>
         </div>
         {% set i = i + 1 %}
@@ -89,15 +126,18 @@ body {
             <button class="btn btn-danger" id="submitBtn">Submit Exam</button>
         </div>
     </div>
+
 </form>
 <script>
       var submitting = false;
+      var lastsave = false;
       $("textarea.la-java").each(function() {
           var obj = $(this);
           obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
               lineNumbers: true,
               tabSize: 4,
               indentUnit: 4,
+              viewportMargin: Infinity,
               matchBrackets: true,
               mode: "text/x-java"
           });
@@ -108,6 +148,7 @@ body {
               lineNumbers: true,
               tabSize: 4,
               indentUnit: 4,
+              viewportMargin: Infinity,
               matchBrackets: true,
               mode: "text/x-python"
           });
@@ -118,6 +159,7 @@ body {
               lineNumbers: true,
               tabSize: 4,
               indentUnit: 4,
+              viewportMargin: Infinity,
               matchBrackets: true,
               mode: "text/x-markdown"
           });
@@ -128,6 +170,7 @@ body {
               lineNumbers: true,
               tabSize: 4,
               indentUnit: 4,
+              viewportMargin: Infinity,
               mode: "text/plain"
           });
       });
@@ -155,6 +198,12 @@ body {
                 // Check the return value from the ajax. If success, then alert the
                 // user and make appropriate updates.
                 if (data.result == "success") {
+                    {% if data.info.time_allowed %}
+                        if ((typeof data.time) != 'undefined') {
+                            timeleft = data.time.left;
+                        }
+                    {% endif %}
+                    console.log(data);
                     var currentdate = new Date(); 
                     var datetime = (currentdate.getMonth()+1)  + "/"
                                     + currentdate.getDate() + "/" 
@@ -189,7 +238,43 @@ body {
         var autosave = function() {
             save(true);
         }
-        var autosavetimout = setInterval(autosave, 300000);
+        var autosavetimout = setInterval(autosave, 200000);
+
+        {% if data.info.time_allowed %}
+        var timeallowed = {{data.info.time_allowed}};
+        var timeleft = {{data.info.time.left ? data.info.time.left : 0}};
+        var alerted = false;
+        var updateTimerInfo = function() {
+            var percleft = ((timeleft / timeallowed)*100);
+            console.log(timeleft + ' ' + percleft + ' ' + timeallowed);
+            $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
+            $('#timertext').text(timeleft + " minutes remaining");
+            {% if data.info.time_enforced == 't' %}
+            if (timeleft < 5 && timeleft > 0) {
+                autosave();
+                $('#timerbar').removeClass('progress-bar-info');
+                $('#timerbar').addClass('progress-bar-danger');
+            }
+
+            if (timeleft <= 2 && timeleft > 0 && !alerted) {
+                alert("Please finish up your work, there is about a minute left.");
+                alerted = true;
+            }
+            if (timeleft <= 0) {
+                // We are not going to prompt this time, just submit the page
+                window.onbeforeunload = function() {};
+                document.questionform.submit();
+            }
+            {% endif %}
+
+        }
+        var timer = function() {
+            timeleft = timeleft - 1;
+            updateTimerInfo();
+        }
+        var timertimeout = setInterval(timer, 60000); // update every minute
+        updateTimerInfo(); // run on page load
+        {% endif %}
 
         $('#save').click(function(){
             save(false);

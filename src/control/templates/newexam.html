@@ -15,7 +15,11 @@
 <!-- Latest compiled and minified JavaScript -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
 
+
+
 <!-- Helper Scripts -->
+<script src="js/bootstrap-toggle.min.js"></script>
+<link rel="stylesheet" href="css/bootstrap-toggle.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.5/js/bootstrap-select.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.5/css/bootstrap-select.min.css">
 
@@ -42,7 +46,8 @@
 <meta charset="utf-8"/>
 <style>
 .CodeMirror {
-    height: 300px;
+    /*height: 300px;*/
+    height: auto;
         border: 1px solid #000;
 }
 body {
@@ -92,6 +97,18 @@ textarea {
                 <div class="form-group">
                     <label for="name">Name</label>
                     <input type="text" class="form-control" id="name" name="name" placeholder="Exam Name" value="{{data.examdata.info.title}}">
+                </div>
+                <div class="form-group">
+                    <label for="instructions">Instructions</label>
+                    <textarea name="instructions" class="htmltext">{{data.examdata.info.instructions}}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="timeallowed">Time Allowed</label>
+                    <input type="text" class="form-control" id="timeallowed" name="timeallowed" placeholder="Time Allowed (mins)" value="{{data.examdata.info.time_allowed}}">
+                </div>
+                <div class="form-group">
+                    <label for="timeenforced">Enforce Time</label>
+                    <input type="checkbox" data-toggle="toggle" data-on="Enforced" data-off="Not Enforced"  data-onstyle="success" name="timeenforced" value="t" {{data.examdata.info.time_enforced == 't' ? 'checked'}}>
                 </div>
                 {% if data.examdata.info.questions %}
                 {% for question in data.examdata.info.questions %}
@@ -199,7 +216,8 @@ textarea {
               if (!obj.get(0).CodeMirror) {
                   obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
                       lineNumbers: true,
-                      tabSize: 4
+                      tabSize: 4,
+                      viewportMargin: Infinity
                   });
               }
           });

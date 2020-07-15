@@ -305,17 +305,33 @@ class Helper {
         if (!$allowed) {
             die($this->showError("Not Authorized"));
         }
+        $timeallowed = null;
+        if (isset($this->input["timeallowed"]) && is_numeric($this->input["timeallowed"]) && $this->input["timeallowed"] > 0) {
+            $timeallowed = $this->input["timeallowed"];
+        }
+
+        $timeenforced = 'f';
+        if (isset($this->input["timeenforced"]) && $this->input["timeenforced"] == 't') {
+            $timeenforced = 't';
+        }
+
         // create the exam
         if (!isset($this->input["exam"]) || empty($this->input["exam"])) {
-            $res = $this->db->query("insert into exam (course_id, title) values ($1, $2) returning id;", array(
+            $res = $this->db->query("insert into exam (course_id, title, instructions, time_allowed, time_enforced) values ($1, $2, $3, $4, $5) returning id;", array(
                 $course["id"],
-                $this->input["name"]
+                $this->input["name"],
+                $this->input["instructions"],
+                $timeallowed,
+                $timeenforced
             ));
         } else {
-            $res = $this->db->query("update exam set title = $3 where course_id = $1 and id = $2 returning id;", array(
+            $res = $this->db->query("update exam set (title, instructions, time_allowed, time_enforced) = ($3, $4, $5, $6) where course_id = $1 and id = $2 returning id;", array(
                 $course["id"],
                 $this->input["exam"],
-                $this->input["name"]
+                $this->input["name"],
+                $this->input["instructions"],
+                $timeallowed,
+                $timeenforced
             ));
         }
         $tmp = $this->db->fetchAll($res);
@@ -385,7 +401,7 @@ class Helper {
         $eid = $this->input["e"];
 
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.closed, e.title from course c, exam e, person_course pc 
+            e.id, e.date, e.open, e.close, e.closed, e.title, e.instructions from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
                 pc.role in ('Instructor')
                 and e.id = $2", 
@@ -542,7 +558,7 @@ class Helper {
      */
     public function handleSaveExam() {
         $result = ["result" => "error", "error"=> "Unknown error occurred"];
-        $this->loadQuestions();
+        $exam = $this->loadQuestions();
 
         foreach ($this->input["q"] as $k => $q) {
             $res = $this->db->query("select pq.response from person_question pq where pq.person_id = $1
@@ -558,7 +574,23 @@ class Helper {
                     [$this->user["id"], $q, $this->input["e"], $this->input["response"][$k]]);
             }
         }
-        $result = ["result" => "success", "submission" => $this->input];
+
+        $left = "inf";
+        if (isset($exam["info"]["date_started"]) && isset($exam["info"]["time_allowed"]) &&
+                $exam["info"]["date_started"] != null && $exam["info"]["time_allowed"] != null) {
+            $limit = $exam["info"]["time_allowed"];
+            $started = strtotime($exam["info"]["date_started"]);
+            $now = strtotime("now");
+
+            $left = [
+                "left" => (int) ceil($limit - (($now - $started)/60)),
+                "started" => (int) $started / 60,
+                "now" => (int) $now / 60,
+                "limit" => $limit
+            ];
+        }
+        
+        $result = ["result" => "success", "time" => $left, "submission" => $this->input];
         return json_encode($result, JSON_PRETTY_PRINT);
     }
 
@@ -604,7 +636,7 @@ class Helper {
             else if ($m == "checkin")
                 $this->dData["message"] = "Ungraded questions checked in.";
         }
-        
+
         return $this->display("gradehome");
     }
 
@@ -624,6 +656,85 @@ class Helper {
     }
 
     /**
+     * Plagiarism Check 
+     *
+     *
+     * @return string HTML display data from the templating engine
+     */
+    public function checkSimilarities() {
+        $eid = $this->input["e"];
+        
+        $examInfo = [];
+        $res = $this->db->query("select 
+            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
+                pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
+                and e.id = $2", 
+            [$this->user["id"], $eid]);
+        $all = $this->db->fetchAll($res);
+        $allowed = false;
+        foreach ($all as $row) {
+            if ($row["id"] == $eid) {
+                $allowed = true;
+                $examInfo = $row;
+                break;
+            }
+        }
+        
+        if (!$allowed)
+            die($this->showError("You do not have permissions to view this exam"));
+
+        $all = [];
+        // Select one at random and update to grab it as a grader
+        $res = $this->db->query("select * from person_question where exam_id = $1 order by question_id",
+            [$eid]);
+        $all = $this->db->fetchAll($res);
+
+        $similarity = [];
+        $quest = [];
+        foreach ($all as $r) {
+            if (!isset($quest[$r["question_id"]]))
+                $quest[$r["question_id"]] = [];
+            $quest[$r["question_id"]][$r["person_id"]] = $r["response"];
+        }
+        $count = 0;
+        foreach ($quest as $i => $q) {
+            $similarity[$i] = [];
+            foreach ($q as $id => $resp) {
+                $similarity[$i][$id] = [];
+                foreach($q as $id2 => $resp2) {
+                    if ($id == $id2)
+                        continue;
+                    $t = similar_text($resp, $resp2, $per);
+                    if ($per >= 99)
+                        $similarity[$i][$id][$id2] = [
+                            "percentage" => $per,
+                            "orig" => $resp,
+                            "other" => $resp2
+                        ];
+                    if ($count++ > 9000)
+                        break;
+                }
+            }
+        }
+
+        $tmp = "";
+        foreach ($similarity as $q => $ids) {
+
+            $tmp .= "Question $q<br><table border='1'><tr><th>Percent</th><th>One</th><th>Two</th></tr>\n";
+            foreach ($ids as $id1 => $ids2) {
+                foreach ($ids2 as $id2 => $d) {
+                    $tmp .= "<tr><td>{$d["percentage"]}</td><td width='40%'>$id1<br><pre>{$d["orig"]}</pre></td><td width='40%'>$id2<br><pre>{$d["other"]}</pre></td></tr>\n";
+                }
+            }
+        }
+        
+        $tmp .= "</table>";
+        //$this->dData = $data;
+        return $tmp; //$this->display("grade_one");
+    }
+
+    /**
      * Grade One Question
      *
      * Checks that the user has permission to grade the given question, then shows the grading interface
@@ -640,7 +751,7 @@ class Helper {
 
         $examInfo = [];
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            e.id, e.date, e.open, e.close, e.title, e.instructions from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
                 pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
                 and e.id = $2", 
@@ -679,7 +790,7 @@ class Helper {
                     where pq.score is null and pq.grader is null and 
                     pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
                     pe.date_taken is not null and pq.question_id = $1
-                    limit 1)
+                    limit 1 for update)
                 returning *;",
                 [$this->input['q'],
                 $this->user["id"]]);
@@ -693,15 +804,25 @@ class Helper {
                     where pq.person_id = $2 and 
                     pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
                     pe.date_taken is not null and pq.question_id = $1
-                    limit 1)
+                    limit 1 for update)
                 returning *;",
                 [$this->input['q'], $uid, $this->user["id"]]);
             $all = $this->db->fetchAll($res);
         }
         if (isset($all[0]) && isset($all[0]["question_id"])) {
             $data = $all[0];
+            $data["flagged"] = $all[0]["flagged"] === 't' ? true : false;
             $data["current_score"] = $data["score"]; // fix the returning *
             unset($data["score"]);
+
+            // get the person information
+            $resPers = $this->db->query("select * from person where id = $1;",
+                [$data["person_id"]]);
+            $allPdata = $this->db->fetchAll($resPers);
+
+            if (isset($allPdata[0])) {
+                $data["person_userid"] = $allPdata[0]["uva_id"];
+            }
             
             // get the question information
             $resQues = $this->db->query("select text, code, correct, rubric, score from question where id = $1;",
@@ -845,15 +966,20 @@ class Helper {
         if ($this->input["score"] != "" && is_numeric($this->input["score"]))
             $score = $this->input["score"];
 
+        $flagged = 'f';
+        if (isset($this->input["flagged"]) && $this->input["flagged"] == "yes")
+            $flagged = 't';
+
         $res = $this->db->query("update person_question
-            set score = $4, feedback = $5, grade_time = now()
+            set score = $4, feedback = $5, grade_time = now(), flagged = $6
             where person_id = $1 and question_id = $2 and grader = $3;", 
             [
                 $this->input['student'],
                 $this->input['question'],
                 $this->user["id"],
                 $score,
-                $this->input['comments']
+                $this->input['comments'],
+                $flagged
             ]);
 
         return true;
@@ -920,35 +1046,68 @@ class Helper {
             $eid = $this->input["e"];
 
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.closed from course c, exam e, person_course pc 
-            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1;", [$this->user["id"]]);
+            e.id, e.date, e.open, e.close, e.closed, e.time_allowed, e.time_enforced from course c, exam e, person_course pc 
+            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and e.id = $2;", [$this->user["id"], $eid]);
         $all = $this->db->fetchAll($res);
         $allowed = false;
         foreach ($all as $row) {
             if ($row["id"] == $eid && $row["closed"] != 't') {
                 $allowed = true;
+                $exam["info"] = $row;
+                // by default they start with full time left
+                $exam["info"]["time"] = [
+                    "elapsed" => 0,
+                    "left" => $row["time_allowed"],
+                    "percleft" => "100"
+                ]; 
                 break;
             }
         }
 
-        //TODO code in a password option for SDAC that overrides allowed.  May also hard-code a few passwords for
-        // this semester only, so that students can't take it.
         if (!$allowed)
             die($this->showError("You may not take this exam at this time"));
 
-        $res = $this->db->query("select e.exam_id, e.date_taken from person_exam e where e.exam_id = $1 and e.person_id = $2 and e.date_taken is not null", [$eid, $this->user["id"]]);
+        // Check to ensure the student hasn't submitted already
+        $res = $this->db->query("select e.exam_id, e.date_taken, e.date_started from person_exam e where e.exam_id = $1 and e.person_id = $2;", [$eid, $this->user["id"]]);
         $all = $this->db->fetchAll($res);
         if (isset($all[0])) {
-            die($this->showError("You may not retake the same exam twice."));
+            // The student has started the exam -- check conditions
+            $info = $all[0];
+            $exam["info"]["date_started"] = $info["date_started"];
+
+            if ($info["date_taken"] != null)
+                die($this->showError("You may not retake the same exam twice."));
+            
+            if ($exam["info"]["time_allowed"] != null) {
+                // check to see time left (rewrite the time left)
+                $exam["info"]["time"] = [];
+                $started = strtotime($info["date_started"]);
+                $now = strtotime("now");
+                $mins = ($now - $started) / 60;
+                
+                $exam["info"]["time"]["elapsed"] = (int) $mins;
+                $exam["info"]["time"]["left"] = (int) ceil($exam["info"]["time_allowed"] - $mins);
+                $exam["info"]["time"]["percleft"] = ($exam["info"]["time_allowed"] - $mins) / $exam["info"]["time_allowed"] * 100;
+            }
+            
+            // TODO: Check if they have taken more than the alotted time (Can't reopen)
+            // if timer enforced AND timer has passed
+            if ($exam["info"]["time_enforced"] == 't' && $exam["info"]["time_allowed"] != null) {
+                if ($exam["info"]["time"]["left"] + 1 < 0) {
+                    die($this->showError("You have exceeded the time allowed for this exam."));
+                }
+            }
         }
 
+
         
-        $res = $this->db->query("select e.id as exam_id, e.title, e.open, e.close, e.date, q.* from exam e, question q where e.id = $1 and q.exam_id = e.id order by q.ordering asc", [$eid]);
+        $res = $this->db->query("select e.id as exam_id, e.title, e.instructions, e.open, e.close, e.date, q.* from exam e, question q where e.id = $1 and q.exam_id = e.id order by q.ordering asc", [$eid]);
         $all = $this->db->fetchAll($res);
 
         foreach ($all as $row) {
             $exam["id"] = $row["exam_id"];
             $exam["title"] = $row["title"];
+            $exam["instructions"] = $row["instructions"];
             $exam["open"] = $row["open"];
             $exam["close"] = $row["close"];
             $exam["date"] = $row["date"];
@@ -1084,7 +1243,8 @@ class Helper {
             $eid = $this->input["e"];
         
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            e.id, e.date, e.open, e.close, e.title, e.instructions, e.time_enforced, e.time_allowed, pc.role 
+            from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
                 pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
                 and e.id = $2", 
@@ -1095,6 +1255,7 @@ class Helper {
             if ($row["id"] == $eid) {
                 $allowed = true;
                 $examInfo = $row;
+                $this->user["course_role"] = $row["role"];
                 break;
             }
         }
@@ -1119,9 +1280,18 @@ class Helper {
 
         $exams = [];
         $questions = [];
-        $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name, pc.role from person_exam e, person u, exam ex, person_course pc where e.exam_id = $1 and e.person_id = u.id and pc.person_id = u.id and ex.id = e.exam_id and pc.course_id = ex.course_id;", [$eid]);
+        $res = null;
+        $lastperson = null;
+        // if we're looking for an ID, only get that one
+        if ($onlyid) {
+            $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name, pc.role from person_exam e, person u, exam ex, person_course pc where e.exam_id = $1 and e.person_id = u.id and pc.person_id = u.id and ex.id = e.exam_id and pc.course_id = ex.course_id and u.uva_id = $2;", [$eid, $onlyid]);
+        } else {
+            // else get everyone's exam
+            $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name, pc.role from person_exam e, person u, exam ex, person_course pc where e.exam_id = $1 and e.person_id = u.id and pc.person_id = u.id and ex.id = e.exam_id and pc.course_id = ex.course_id;", [$eid]);
+        }
         $all = $this->db->fetchAll($res);
         foreach ($all as $exam) {
+            $lastperson = $exam["person_id"];
             $exams[$exam["person_id"]] = [
                 "uva_id" => $exam["uva_id"],
                 "name" => $exam["name"],
@@ -1133,8 +1303,16 @@ class Helper {
             ];
         }
         
-        $res = $this->db->query("select * from person_question where exam_id = $1
-            order by question_id, person_id asc;", [$eid]);
+        $res = null;
+        // if we're looking for an ID, only get that one
+        if ($onlyid && $lastperson) {
+            $res = $this->db->query("select * from person_question where exam_id = $1 and person_id = $2
+                order by question_id, person_id asc;", [$eid, $lastperson]);
+        } else {
+            // else get everyone's exam
+            $res = $this->db->query("select * from person_question where exam_id = $1
+                order by question_id, person_id asc;", [$eid]);
+        }
         $all = $this->db->fetchAll($res);
 
         foreach ($all as $row) {
@@ -1143,17 +1321,21 @@ class Helper {
                     "answers" => []
                 ];
             $questions[$row["question_id"]]["answers"][$row["person_id"]] = [
+                "person_id" => $row["person_id"],
                 "response" => $row["response"],
                 "feedback" => $row["feedback"],
                 "score" => $row["score"],
-                "grader" => $row["grader"]
+                "grader" => $row["grader"],
+                "flagged" => $row["flagged"] === 't' ? true : false
             ];
 
             $exams[$row["person_id"]]["questions"][$row["question_id"]] = [
+                "person_id" => $row["person_id"],
                 "response" => $row["response"],
                 "feedback" => $row["feedback"],
                 "score" => $row["score"],
-                "grader" => $row["grader"]
+                "grader" => $row["grader"],
+                "flagged" => $row["flagged"] === 't' ? true : false
             ];
         }
 
@@ -1179,13 +1361,23 @@ class Helper {
         //unset($qinfo);
 
         $recents = [];
-        $res = $this->db->query("select * from person_question where exam_id = $1 and grader = $2
-            order by grade_time desc;", [$eid, $this->user["id"]]);
+        $res = null;
+        // if we're looking for an ID, only get that one
+        if ($onlyid && $lastperson) {
+            $res = $this->db->query("select * from person_question where exam_id = $1 and grader = $2 and person_id = $3
+                order by grade_time desc;", [$eid, $this->user["id"], $lastperson]);
+        } else {
+            // else get everyone's exam
+            $res = $this->db->query("select * from person_question where exam_id = $1 and grader = $2
+                order by grade_time desc;", [$eid, $this->user["id"]]);
+        }
         $all = $this->db->fetchAll($res);
         foreach ($all as $row) {
             if (!isset($recents[$row["question_id"]]))
                 $recents[$row["question_id"]] = [];
-            array_push($recents[$row["question_id"]], ["id" => $row["person_id"]]);
+            array_push($recents[$row["question_id"]], ["id" => $row["person_id"],
+                "flagged" => $row["flagged"] === 't' ? true : false
+            ]);
         }
 
         return ["info" => $examInfo, "exams" => $exams, "questions" => $questions, "recents" => $recents];
@@ -1352,7 +1544,7 @@ class Helper {
 
         $examInfo = []; 
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            e.id, e.date, e.open, e.close, e.title, e.instructions from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
                 pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
                 and e.id = $2", 
@@ -1385,6 +1577,29 @@ class Helper {
 
     }
 
+    public function showStudentExam() {
+        $uid = $this->input["u"];
+        $results = $this->loadResults(null, $uid);
+
+        //print_r($results);
+        //$this->dData = $results;
+        //return ["info" => $examInfo, "exams" => $exams, "questions" => $questions, "recents" => $recents];
+
+        $this->dData = [
+            "info" => $results["info"],
+            "questions" => []
+        ];
+        foreach ($results["exams"] as $exam)
+            $this->dData["exam"] = $exam;
+        foreach ($results["info"]["questions"] as $q)
+            $this->dData["questions"][$q["id"]] = $q;
+        $this->dData["exam"]["score"] = 0;
+        foreach ($this->dData["exam"]["questions"] as $q)
+            $this->dData["exam"]["score"] += $q["score"];
+        return $this->display("viewexam");
+        
+    }
+
     /**
      * Download Grades
      *
@@ -1398,6 +1613,9 @@ class Helper {
     public function downloadGrades($onlyid = null) {
         $results = $this->loadResults(null, $onlyid);
         $info = $results["info"];
+        
+        if (!$this->isInstructor($this->user["id"], $this->input["e"]))
+            die($this->showError("You do not have permissions to view this exam"));
         
         // other formats.  Collab is default.
         if (isset($this->input["format"])) {

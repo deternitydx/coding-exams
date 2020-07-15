@@ -118,7 +118,8 @@ body {
                                         <td><a href="?c=grade&e={{exam.id}}" class="btn btn-xs btn-success">Grade Exam</a></td>
                                     {% endif %}
                                     {% if cdata.role == "Instructor"%}
-                                        <td><a href="?c=report&e={{exam.id}}" class="btn btn-xs btn-warning">Exam Report</a></td>
+                                        <td><a href="?c=report&e={{exam.id}}" class="btn btn-xs btn-warning">Report</a></td>
+                                        <td><a href="?c=full_report&e={{exam.id}}" class="btn btn-xs btn-warning">Exam Results</a></td>
                                         <td><div class="btn-group">
                                             <button type="button" class="btn btn-xs btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                 Download Scores <span class="caret"></span>
