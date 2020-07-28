@@ -526,7 +526,7 @@ class Helper {
                     $resP = $this->db->query("insert into person (uva_id, name) values ($1, $2) returning id;",
                         [
                             $line[1],
-                            $line[0]
+                            utf8_encode($line[0]) // some peoples names are in UTF8??
                         ]
                     );
                     $allP = $this->db->fetchAll($resP);

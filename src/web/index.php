@@ -89,6 +89,9 @@ switch ($command) {
     case "grade_one":
         echo $helper->gradeOne(); // checks for input "p"
         break;
+    case "similarities":
+        echo $helper->checkSimilarities();
+        break;
     case "save_grade":
         echo $helper->saveGrade();
         break;
@@ -113,9 +116,11 @@ switch ($command) {
     case "add_participant_post":
         echo $helper->addParticipant();
         break;
-    case "show_grades":
-        echo $helper->showError("This feature is currently disabled", []);
-        //echo $helper->showGrades();
+    case "full_report":
+        echo $helper->showGrades();
+        break;
+    case "view_student_exam":
+        echo $helper->showStudentExam();
         break;
     default:
         echo $helper->showHome();
