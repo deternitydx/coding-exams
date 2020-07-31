@@ -1287,7 +1287,7 @@ class Helper {
             $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name, pc.role from person_exam e, person u, exam ex, person_course pc where e.exam_id = $1 and e.person_id = u.id and pc.person_id = u.id and ex.id = e.exam_id and pc.course_id = ex.course_id and u.uva_id = $2;", [$eid, $onlyid]);
         } else {
             // else get everyone's exam
-            $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name, pc.role from person_exam e, person u, exam ex, person_course pc where e.exam_id = $1 and e.person_id = u.id and pc.person_id = u.id and ex.id = e.exam_id and pc.course_id = ex.course_id;", [$eid]);
+            $res = $this->db->query("select e.person_id, e.date_started, e.date_taken, e.code, u.uva_id, u.name, pc.role from person_exam e, person u, exam ex, person_course pc where e.exam_id = $1 and e.person_id = u.id and pc.person_id = u.id and ex.id = e.exam_id and pc.course_id = ex.course_id and pc.role = 'Student';", [$eid]);
         }
         $all = $this->db->fetchAll($res);
         foreach ($all as $exam) {
@@ -1310,7 +1310,8 @@ class Helper {
                 order by question_id, person_id asc;", [$eid, $lastperson]);
         } else {
             // else get everyone's exam
-            $res = $this->db->query("select * from person_question where exam_id = $1
+            $res = $this->db->query("select pq.* from person_question pq, exam e, person_course pc where pq.exam_id = $1 and pq.person_id = pc.person_id 
+                and e.id = pq.exam_id and e.course_id = pc.course_id and pc.role = 'Student'
                 order by question_id, person_id asc;", [$eid]);
         }
         $all = $this->db->fetchAll($res);
