@@ -110,13 +110,26 @@ textarea {
                     <label for="timeenforced">Enforce Time</label>
                     <input type="checkbox" data-toggle="toggle" data-on="Enforced" data-off="Not Enforced"  data-onstyle="success" name="timeenforced" value="t" {{data.examdata.info.time_enforced == 't' ? 'checked'}}>
                 </div>
+                <div class="form-group">
+                    <label for="timermethod">Timer Method</label>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="bar-down" {{data.examdata.info.timer_method == 'bar-down' ? 'checked'}}> Countdown Bar
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="bar-up" {{data.examdata.info.timer_method == 'bar-up' ? 'checked'}}> Countup Bar
+                        </label>
+                    </div>
+                </div>
                 {% if data.examdata.info.questions %}
                 {% for question in data.examdata.info.questions %}
                 <div class="question-group">
                     <h3>Question</h3>
                     <input type="hidden" name="questionid[]" value="{{question.id}}">
                     <div class="form-group">
-                        <label for="question[]">Text (use HTML tags)</label>
+                        <label for="question[]">Text</label>
                         <textarea name="question[]" class="htmltext">{{question.text}}</textarea>
                         <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
                     </div>
@@ -232,7 +245,9 @@ textarea {
                             ['font', ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript']],
                             ['fontsize', ['fontsize']],
                             ['color', ['color']],
-                            ['para', ['ul', 'ol', 'paragraph']]
+                            ['para', ['ul', 'ol', 'paragraph']],
+                            ['insert', ['table', 'picture']],
+                            ['view', ['codeview']]
                           ]
 
                   });

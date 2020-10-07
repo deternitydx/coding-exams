@@ -72,11 +72,19 @@ body {
                 <ul class="nav navbar-nav">
                     {% if data.info.time_allowed %}
                     <li>
+                        {% if data.info.timer_method == 'bar-down' %}
                         <div class="progress" style="margin-top: 15px; margin-bottom: 15px; width: 400px; text-align: center;">
                             <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuenow="{{data.info.time.percleft}}" aria-valuemin="0" aria-valuemax="100" style="width: {{data.info.time.percleft}}%;">
                             </div>
                             <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;">{{ data.info.time.left }} minutes remaining</span>
                         </div>
+                        {% elseif data.info.timer_method == 'bar-up' %}
+                        <div class="progress" style="margin-top: 15px; margin-bottom: 15px; width: 400px; text-align: center;">
+                            <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuenow="{{100 - data.info.time.percleft}}" aria-valuemin="0" aria-valuemax="100" style="width: {{100 - data.info.time.percleft}}%;">
+                            </div>
+                            <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;">Elapsed time: {{ data.info.time.elapsed }} mins</span>
+                        </div>
+                        {% endif %}
                     </li>
                     {% endif %}
                     <li><a href="#"><i class="fa fa-user-circle" aria-hidden="true"></i> {{user.name}}</a></li>
@@ -241,14 +249,21 @@ body {
         var autosavetimout = setInterval(autosave, 200000);
 
         {% if data.info.time_allowed %}
+        var timer_method = '{{data.info.timer_method}}';
         var timeallowed = {{data.info.time_allowed}};
         var timeleft = {{data.info.time.left ? data.info.time.left : 0}};
+        var timeelapsed = {{data.info.time.elapsed ? data.info.time.elapsed : 0}};
         var alerted = false;
         var updateTimerInfo = function() {
             var percleft = ((timeleft / timeallowed)*100);
             console.log(timeleft + ' ' + percleft + ' ' + timeallowed);
-            $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
-            $('#timertext').text(timeleft + " minutes remaining");
+            if (timer_method == 'bar-down') {
+                $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
+                $('#timertext').text(timeleft + " minutes remaining");
+            } else if (timer_method == 'bar-up') {
+                $('#timerbar').css('width', (100-percleft)+'%').attr('aria-valuenow',(100-percleft));
+                $('#timertext').text("Elapsed time: " + timeelapsed + " mins");
+            }
             {% if data.info.time_enforced == 't' %}
             if (timeleft < 5 && timeleft > 0) {
                 autosave();
@@ -270,6 +285,7 @@ body {
         }
         var timer = function() {
             timeleft = timeleft - 1;
+            timeelapsed = timeelapsed + 1;
             updateTimerInfo();
         }
         var timertimeout = setInterval(timer, 60000); // update every minute

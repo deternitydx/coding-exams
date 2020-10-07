@@ -315,23 +315,30 @@ class Helper {
             $timeenforced = 't';
         }
 
+        $timermethod = 'bar-down';
+        if (isset($this->input["timermethod"])) {
+            $timermethod = $this->input["timermethod"];
+        }
+
         // create the exam
         if (!isset($this->input["exam"]) || empty($this->input["exam"])) {
-            $res = $this->db->query("insert into exam (course_id, title, instructions, time_allowed, time_enforced) values ($1, $2, $3, $4, $5) returning id;", array(
+            $res = $this->db->query("insert into exam (course_id, title, instructions, time_allowed, time_enforced, timer_method) values ($1, $2, $3, $4, $5, $6) returning id;", array(
                 $course["id"],
                 $this->input["name"],
                 $this->input["instructions"],
                 $timeallowed,
-                $timeenforced
+                $timeenforced,
+                $timermethod
             ));
         } else {
-            $res = $this->db->query("update exam set (title, instructions, time_allowed, time_enforced) = ($3, $4, $5, $6) where course_id = $1 and id = $2 returning id;", array(
+            $res = $this->db->query("update exam set (title, instructions, time_allowed, time_enforced, timer_method) = ($3, $4, $5, $6, $7) where course_id = $1 and id = $2 returning id;", array(
                 $course["id"],
                 $this->input["exam"],
                 $this->input["name"],
                 $this->input["instructions"],
                 $timeallowed,
-                $timeenforced
+                $timeenforced,
+                $timermethod
             ));
         }
         $tmp = $this->db->fetchAll($res);
@@ -1046,7 +1053,7 @@ class Helper {
             $eid = $this->input["e"];
 
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.closed, e.time_allowed, e.time_enforced from course c, exam e, person_course pc 
+            e.id, e.date, e.open, e.close, e.closed, e.time_allowed, e.time_enforced, e.timer_method from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and e.id = $2;", [$this->user["id"], $eid]);
         $all = $this->db->fetchAll($res);
         $allowed = false;
@@ -1243,7 +1250,7 @@ class Helper {
             $eid = $this->input["e"];
         
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.title, e.instructions, e.time_enforced, e.time_allowed, pc.role 
+            e.id, e.date, e.open, e.close, e.title, e.instructions, e.time_enforced, e.time_allowed, e.timer_method, pc.role 
             from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
                 pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
