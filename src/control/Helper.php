@@ -10,6 +10,10 @@
  */
 namespace manager\control;
 use \manager\Config as Config;
+use phpseclib\Crypt\RSA;
+use phpseclib\Net\SSH2;
+use phpseclib\Net\SFTP;
+
 
 /**
  * Helper class
@@ -349,7 +353,7 @@ class Helper {
 
         foreach ($this->input["question"] as $k => $q) {
             if (!isset($this->input["questionid"][$k]) || empty($this->input["questionid"][$k])) {
-                $res = $this->db->query("insert into question (exam_id, ordering, text, code, correct, rubric, language, score) values ($1, $2, $3, $4, $5, $6, $7, $8);",
+                $res = $this->db->query("insert into question (exam_id, ordering, text, code, correct, rubric, language, score, unit_tests) values ($1, $2, $3, $4, $5, $6, $7, $8, $9);",
                     [
                         $eid,
                         $k, 
@@ -358,10 +362,11 @@ class Helper {
                         isset($this->input["answer"][$k]) ? $this->input["answer"][$k] : "",
                         isset($this->input["rubric"][$k]) ? $this->input["rubric"][$k] : "",
                         isset($this->input["language"][$k]) ? $this->input["language"][$k] : "java",
-                        isset($this->input["score"][$k]) ? $this->input["score"][$k] : 0
+                        isset($this->input["score"][$k]) ? $this->input["score"][$k] : 0,
+                        isset($this->input["autograder"][$k]) ? $this->input["autograder"][$k] : ""
                     ]);
             } else {
-                $res = $this->db->query("update question set (text, code, correct, rubric, language, score) = ($1, $2, $3, $4, $5, $6) where id = $7;",
+                $res = $this->db->query("update question set (text, code, correct, rubric, language, score, unit_tests) = ($1, $2, $3, $4, $5, $6, $7) where id = $8;",
                     [
                         $q, 
                         isset($this->input["code"][$k]) ? $this->input["code"][$k] : "",
@@ -369,6 +374,7 @@ class Helper {
                         isset($this->input["rubric"][$k]) ? $this->input["rubric"][$k] : "",
                         isset($this->input["language"][$k]) ? $this->input["language"][$k] : "java",
                         isset($this->input["score"][$k]) ? $this->input["score"][$k] : 0,
+                        isset($this->input["autograder"][$k]) ? $this->input["autograder"][$k] : "",
                         $this->input["questionid"][$k]
                     ]);
             }
@@ -794,7 +800,7 @@ class Helper {
                 (person_id, question_id, exam_id) = 
                 (select pq.person_id, pq.question_id, pq.exam_id
                     from person_question pq, person_exam pe
-                    where pq.score is null and pq.grader is null and 
+                    where pq.grader is null and 
                     pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
                     pe.date_taken is not null and pq.question_id = $1
                     limit 1 for update)
@@ -1280,6 +1286,7 @@ class Helper {
                 "code" => $row["code"],
                 "correct" => $row["correct"],
                 "rubric" => $row["rubric"],
+                "unit_tests" => $row["unit_tests"],
                 "language" => $row["language"],
                 "score" => $row["score"]
             ];
@@ -1334,6 +1341,7 @@ class Helper {
                 "feedback" => $row["feedback"],
                 "score" => $row["score"],
                 "grader" => $row["grader"],
+                "auto_grader" => $row["auto_grader"],
                 "flagged" => $row["flagged"] === 't' ? true : false
             ];
 
@@ -1343,6 +1351,7 @@ class Helper {
                 "feedback" => $row["feedback"],
                 "score" => $row["score"],
                 "grader" => $row["grader"],
+                "auto_grader" => $row["auto_grader"],
                 "flagged" => $row["flagged"] === 't' ? true : false
             ];
         }
@@ -1352,7 +1361,7 @@ class Helper {
             $graded = 0;
             if (isset($questions[$qinfo["id"]]["answers"])) { 
                 foreach ($questions[$qinfo["id"]]["answers"] as $row) {
-                    if ($row["score"] != "")
+                    if ($row["grader"] != "")
                         $graded++;
                     $total++;
                 }
@@ -1608,6 +1617,133 @@ class Helper {
         
     }
 
+    /**
+     * Download Grades
+     *
+     * Packages up the grades and creates a ZIP file compatible with 
+     * UVA Collab for upload.  This creates the grades file, then turns
+     * the submissions into PDFs for the students to view their submissions.
+     *
+     * @param int $onlyid optional currently unused
+     * @return Contents of the created zipfile
+     */
+    public function runJUnit($onlyid = null) {
+        $results = $this->loadResults(null, $onlyid);
+        $info = $results["info"];
+        
+        if (!$this->isInstructor($this->user["id"], $this->input["e"]))
+            die($this->showError("You do not have permissions to view this exam"));
+
+        $progress = "Connecting to the tester\n\n";
+
+        // Connect to the tester machine 
+        $key = new RSA();
+        $key->loadKey(file_get_contents(\manager\Config::$TEST_MACHINE_RSA));
+
+        // Domain can be an IP too
+        $ssh = new SSH2(\manager\Config::$TEST_MACHINE);
+        if (!$ssh->login(\manager\Config::$TEST_MACHINE_USER, $key)) {
+            exit('SSH Login Failed');
+        }
+        $sftp = new SFTP(\manager\Config::$TEST_MACHINE);
+        if (!$sftp->login(\manager\Config::$TEST_MACHINE_USER, $key)) {
+            exit('SFTP Login Failed');
+        }
+
+        // Change directory command to issue on the server 
+        $cdCmd = "cd " . \manager\Config::$TEST_MACHINE_DIR;
+        $tmpDir = $info["id"]."_".time();
+        $startup = $ssh->exec("$cdCmd && mkdir $tmpDir\n");
+        $cdCmd = $cdCmd . $tmpDir; 
+
+        $progress .= "Running tests\n\n";
+
+        foreach ($info["questions"] as $question) {
+
+            // check if should run tests
+            if (empty($question["unit_tests"]))
+                continue; // we should not run if there are no tests
+
+
+            $progress .= "Running tests for the following question:\n----------------------------------------\n\n";
+
+            $progress .= $question["text"]."\n\n";
+
+            // do the setup for this question
+            $unitTests = $question["unit_tests"];
+            list($junk, $junk2) = explode("public class ", $unitTests);
+            list($unitTestClassName, $junk) = explode(" ", $junk2);
+            $unitTestName = $unitTestClassName . ".java";
+            $scaffold = $question["code"];
+            list($junk, $junk2) = explode("public class ", $scaffold);
+            list($scaffoldName, $junk) = explode(" ", $junk2);
+            $scaffoldName = $scaffoldName . ".java";
+
+            $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$unitTestName, $unitTests);
+            
+            foreach ($results["questions"][$question["id"]]["answers"] as $pid => $answer) {
+                $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$scaffoldName, $answer["response"]);
+            
+                //$setupOut .= $ssh->exec("$cdCmd && pwd && javac $scaffoldName 2>&1\n");
+                $setupOut .= $ssh->exec("$cdCmd && javac -cp .:lib/junit.jar:lib/hamcrest.jar $scaffoldName $unitTestName 2>&1\n");
+                $junitOut = $ssh->exec("$cdCmd && java -cp .:lib/junit.jar:lib/hamcrest.jar org.junit.runner.JUnitCore $unitTestClassName 2>&1\n");
+                $cleanupOut = $ssh->exec("$cdCmd && rm *.class $scaffoldName\n");
+
+                // write the result to postgres
+
+                // Make output more friendly
+                $junitOutClean = str_replace("FAILURES!!!","", $junitOut);
+
+                // Grab counts of tests and failures
+                preg_match('/Tests run:.*([0-9]+),.*Failures:.*([0-9]+)/', $junitOut, $matches);
+                preg_match('/There [wares]+ ([0-9]+) failure.*:/', $junitOut, $matches2);
+
+                // Calculate Score
+                $score = 0;
+                if ($matches[2] == $matches2[1]) {
+                    $testsRun = $matches[1];
+                    $failuresRun = $matches[2];
+                    $passedRun = $testsRun - $failuresRun;
+                    $score = ($passedRun / (float) $testsRun);
+                }
+                $weightedScore = round($score * (float) $question["score"],2);
+                $percentScore = round($score * 100, 2);
+
+
+                // Use JUnit Output as comments unless it's empty, then include setup
+                $comments = $setupOut . $junitOutClean . "\n\n--------------\nAutograder Score: $percentScore%";
+
+                $progress .= $comments."\n\n";
+                $res = $this->db->query("update person_question
+                    set score = $3, auto_grader = $4
+                    where person_id = $1 and question_id = $2;", 
+                    [
+                        $pid,
+                        $question["id"],
+                        $weightedScore,
+                        $comments
+                    ]);
+                
+            }
+
+            $progress .= "Cleaning up test\n\n";
+
+            // clean up this test
+            $cleanupOut = $ssh->exec("$cdCmd && rm *.class *.java\n");
+        }
+
+        $progress .= "Finished running autograder tests\n";
+
+
+        $this->dData = [
+            'info' => $info,
+            'progress' => $progress
+        ];
+
+        return $this->display("autograder");
+
+    }    
+        
     /**
      * Download Grades
      *

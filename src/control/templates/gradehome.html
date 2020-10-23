@@ -98,7 +98,14 @@ textarea {
         </div>
 
         <div class="col-md-12">
-            <h2>Grading</h2>
+            <h2>Grading
+                    <div class="btn-group pull-right">
+                        {% if user.course_role == 'Instructor' %}  
+                        <a class="btn btn-success btn-sm" href="?c=autograde&e={{data.info.id}}">
+                            <i class="fa fa-magic" aria-hidden="true"></i> Run Autograder
+                        </a>
+                        {% endif %}
+                    </div></h2>
             {% set i = 1 %}
             {% for qid, question in data.info.questions %}
             <div class="panel panel-default">

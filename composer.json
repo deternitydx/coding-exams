@@ -10,7 +10,8 @@
     "require": {
         "php": "~7.0",
         "twig/twig": "~1.23",
-        "monolog/monolog": "^1.18"
+        "monolog/monolog": "^1.18",
+        "phpseclib/phpseclib": "~2.0"
     },
     "require-dev": {
         "phpdocumentor/phpdocumentor": "*"
@@ -21,4 +22,3 @@
         }
     }
 }
-

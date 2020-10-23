@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Create New Exam</title>
+    <title>Edit Exam</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -145,6 +145,7 @@ textarea {
                     <div class="form-group">
                         <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
                         <textarea name="code[]" class="codetext">{{question.code}}</textarea>
+                        <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
                     </div>
                     <div class="form-group">
                         <label for="answer[]">Answer (Syntax Highlighted)</label>
@@ -153,6 +154,11 @@ textarea {
                     <div class="form-group">
                         <label for="rubric[]">Rubric (Text Only)</label>
                         <textarea name="rubric[]" class="textonly">{{question.rubric}}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="autograder[]">JUnit Tests</label>
+                        <textarea name="autograder[]" class="codetext">{{question.unit_tests}}</textarea>
+                        <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other include statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
                     </div>
                     <div class="form-group">
                         <label for="score[]">Max Points</label>
@@ -180,6 +186,7 @@ textarea {
                     <div class="form-group">
                         <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
                         <textarea name="code[]" class="codetext"></textarea>
+                        <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
                     </div>
                     <div class="form-group">
                         <label for="answer[]">Answer (Syntax Highlighted)</label>
@@ -188,6 +195,11 @@ textarea {
                     <div class="form-group">
                         <label for="rubric[]">Rubric (Text Only)</label>
                         <textarea name="rubric[]" class="textonly"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="autograder[]">JUnit Tests</label>
+                        <textarea name="autograder[]" class="codetext"></textarea>
+                        <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other include statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
                     </div>
                     <div class="form-group">
                         <label for="score[]">Max Points</label>
@@ -355,10 +367,16 @@ textarea {
                     <div class="form-group">
                         <label for="answer[]">Answer (Syntax Highlighted)</label>
                         <textarea name="answer[]" class="codetext"></textarea>
+                        <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
                     </div>
                     <div class="form-group">
                         <label for="rubric[]">Rubric (Text Only)</label>
                         <textarea name="rubric[]" class="textonly"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="autograder[]">JUnit Tests</label>
+                        <textarea name="autograder[]" class="codetext"></textarea>
+                        <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other include statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
                     </div>
                     <div class="form-group">
                         <label for="score[]">Max Points</label>

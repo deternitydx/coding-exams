@@ -84,7 +84,11 @@ body {
             <textarea name="response[]" class="la-{{data.questions[qid].language}}" style="width: 100%; height: 100%;">{{question.response}}</textarea>
         </div>
         <div><p><b>Score: {{question.score}} / {{data.questions[qid].score}}</b></p>
-        <p><b>Grader Feedback:</b><br/> {{question.feedback}}</p></div>
+        <p><b>Grader Feedback:</b><br/> {{question.feedback}}</p>
+        {% if question.auto_grader %}
+        <p><b>Autograder Feedback:</b></p><pre>{{question.auto_grader}}</pre>
+        {% endif %}
+        </div>
         {% set i = i + 1 %}
     {% endfor %}
 
@@ -119,6 +123,7 @@ body {
           var obj = $(this);
           obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
               lineNumbers: true,
+              lineWrapping: true,
               tabSize: 4,
               indentUnit: 4,
               viewportMargin: Infinity,
@@ -131,6 +136,7 @@ body {
           var obj = $(this);
           obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
               lineNumbers: true,
+              lineWrapping: true,
               tabSize: 4,
               indentUnit: 4,
               viewportMargin: Infinity,

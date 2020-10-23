@@ -111,6 +111,13 @@ textarea {
                             <label>Rubric</label>
                             <pre>{{data.rubric}}</pre>
                         </div>
+                        {% if data.auto_grader %}
+                        <div class="form-group">
+                            <label>Auto-Grader Feedback</label>
+                            <pre>{{data.auto_grader}}</pre>
+                        </div>
+
+                        {% endif %}
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
