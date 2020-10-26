@@ -1679,14 +1679,14 @@ class Helper {
             list($scaffoldName, $junk) = explode(" ", $junk2);
             $scaffoldName = $scaffoldName . ".java";
 
-            $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$unitTestName, $unitTests);
+            $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$tmpDir."/".$unitTestName, $unitTests);
             
             foreach ($results["questions"][$question["id"]]["answers"] as $pid => $answer) {
-                $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$scaffoldName, $answer["response"]);
+                $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$tmpDir."/".$scaffoldName, $answer["response"]);
             
                 //$setupOut .= $ssh->exec("$cdCmd && pwd && javac $scaffoldName 2>&1\n");
-                $setupOut .= $ssh->exec("$cdCmd && javac -cp .:lib/junit.jar:lib/hamcrest.jar $scaffoldName $unitTestName 2>&1\n");
-                $junitOut = $ssh->exec("$cdCmd && java -cp .:lib/junit.jar:lib/hamcrest.jar org.junit.runner.JUnitCore $unitTestClassName 2>&1\n");
+                $setupOut .= $ssh->exec("$cdCmd && javac -cp .:../lib/junit.jar:../lib/hamcrest.jar $scaffoldName $unitTestName 2>&1\n");
+                $junitOut = $ssh->exec("$cdCmd && java -cp .:../lib/junit.jar:../lib/hamcrest.jar org.junit.runner.JUnitCore $unitTestClassName 2>&1\n");
                 $cleanupOut = $ssh->exec("$cdCmd && rm *.class $scaffoldName\n");
 
                 // write the result to postgres
@@ -1732,6 +1732,7 @@ class Helper {
             $cleanupOut = $ssh->exec("$cdCmd && rm *.class *.java\n");
         }
 
+        $cleanupOut = $ssh->exec("$cdCmd && cd .. && rmdir $tmpDir\n");
         $progress .= "Finished running autograder tests\n";
 
 
