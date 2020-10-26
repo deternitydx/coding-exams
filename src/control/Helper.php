@@ -800,7 +800,7 @@ class Helper {
                 (person_id, question_id, exam_id) = 
                 (select pq.person_id, pq.question_id, pq.exam_id
                     from person_question pq, person_exam pe
-                    where pq.grader is null and 
+                    where pq.grader is null and pq.grade_time is null and 
                     pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
                     pe.date_taken is not null and pq.question_id = $1
                     limit 1 for update)
@@ -937,7 +937,7 @@ class Helper {
             die($this->showError("You were not allowed to cancel this submission grade")); 
 
         $res = $this->db->query("update person_question
-            set score = null, grader = null, feedback = null
+            set grader = null, feedback = null 
             where person_id = $1 and question_id = $2 and grader = $3;", 
             [
                 $this->input['student'],
@@ -1341,6 +1341,7 @@ class Helper {
                 "feedback" => $row["feedback"],
                 "score" => $row["score"],
                 "grader" => $row["grader"],
+                "grade_time" => $row["grade_time"],
                 "auto_grader" => $row["auto_grader"],
                 "flagged" => $row["flagged"] === 't' ? true : false
             ];
@@ -1361,7 +1362,7 @@ class Helper {
             $graded = 0;
             if (isset($questions[$qinfo["id"]]["answers"])) { 
                 foreach ($questions[$qinfo["id"]]["answers"] as $row) {
-                    if ($row["grader"] != "")
+                    if ($row["grade_time"] != "")
                         $graded++;
                     $total++;
                 }
