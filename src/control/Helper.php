@@ -106,7 +106,7 @@ class Helper {
     public function showExam() {
         // load questions dies with error if student not allowed to take exam
         $this->dData = $this->loadQuestions();
-        return $this->display("question"); 
+        return $this->display("takeexam"); 
     }
 
     /**
@@ -586,6 +586,11 @@ class Helper {
                 $res = $this->db->query("insert into person_question (person_id, question_id, exam_id, response) values ($1, $2, $3, $4);",
                     [$this->user["id"], $q, $this->input["e"], $this->input["response"][$k]]);
             }
+        }
+
+        if ($exam["info"]["timer_method"] == 'choice' && isset($this->input["timermethod"]) && !empty($this->input["timermethod"])) {
+            $res = $this->db->query("update person_exam set timer_method = $3 where person_id = $1 and exam_id = $2;",
+                [$this->user["id"], $this->input["e"], $this->input["timermethod"]]);
         }
 
         $left = "inf";
@@ -1081,12 +1086,14 @@ class Helper {
             die($this->showError("You may not take this exam at this time"));
 
         // Check to ensure the student hasn't submitted already
-        $res = $this->db->query("select e.exam_id, e.date_taken, e.date_started from person_exam e where e.exam_id = $1 and e.person_id = $2;", [$eid, $this->user["id"]]);
+        $res = $this->db->query("select e.exam_id, e.date_taken, e.date_started, e.timer_method from person_exam e where e.exam_id = $1 and e.person_id = $2;", [$eid, $this->user["id"]]);
         $all = $this->db->fetchAll($res);
         if (isset($all[0])) {
             // The student has started the exam -- check conditions
             $info = $all[0];
             $exam["info"]["date_started"] = $info["date_started"];
+            if ($exam["info"]["timer_method"] == "choice" && $info["timer_method"] != null)
+                $exam["info"]["timer_method"] = $info["timer_method"];
 
             if ($info["date_taken"] != null)
                 die($this->showError("You may not retake the same exam twice."));

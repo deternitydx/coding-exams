@@ -122,6 +122,26 @@ textarea {
                         <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="bar-up" {{data.examdata.info.timer_method == 'bar-up' ? 'checked'}}> Countup Bar
                         </label>
                     </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="text-down" {{data.examdata.info.timer_method == 'text-down' ? 'checked'}}> Countdown text
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="text-up" {{data.examdata.info.timer_method == 'text-up' ? 'checked'}}> Countup Text
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="ten-warn" {{data.examdata.info.timer_method == 'ten-warn' ? 'checked'}}> Ten Minute Warning only
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="choice" {{data.examdata.info.timer_method == 'choice' ? 'checked'}}> Student Choice
+                        </label>
+                    </div>
                 </div>
                 {% if data.examdata.info.questions %}
                 {% for question in data.examdata.info.questions %}

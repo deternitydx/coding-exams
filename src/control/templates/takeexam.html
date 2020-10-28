@@ -34,6 +34,7 @@
 <script src="js/codemirror/mode/python/python.js"></script>
 <script src="js/codemirror/mode/markdown/markdown.js"></script>
 <script src="js/clike.js"></script>
+<script src="js/checktime.js"></script>
 
 <meta charset="utf-8"/>
 <style>
@@ -46,6 +47,7 @@ body {
     margin-bottom: 70px;
     /*background-color: #e7e7ff;*/
 }
+
 </style>
 </head>
 
@@ -72,19 +74,11 @@ body {
                 <ul class="nav navbar-nav">
                     {% if data.info.time_allowed %}
                     <li>
-                        {% if data.info.timer_method == 'bar-down' %}
-                        <div class="progress" style="margin-top: 15px; margin-bottom: 15px; width: 400px; text-align: center;">
-                            <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuenow="{{data.info.time.percleft}}" aria-valuemin="0" aria-valuemax="100" style="width: {{data.info.time.percleft}}%;">
+                        <div id="timer" style="margin-top: 15px; margin-bottom: 15px; width: 400px; text-align: center; visibility: hidden;">
+                            <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="visibility: hidden;"> 
                             </div>
-                            <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;">{{ data.info.time.left }} minutes remaining</span>
+                            <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;"></span>
                         </div>
-                        {% elseif data.info.timer_method == 'bar-up' %}
-                        <div class="progress" style="margin-top: 15px; margin-bottom: 15px; width: 400px; text-align: center;">
-                            <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuenow="{{100 - data.info.time.percleft}}" aria-valuemin="0" aria-valuemax="100" style="width: {{100 - data.info.time.percleft}}%;">
-                            </div>
-                            <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;">Elapsed time: {{ data.info.time.elapsed }} mins</span>
-                        </div>
-                        {% endif %}
                     </li>
                     {% endif %}
                     <li><a href="#"><i class="fa fa-user-circle" aria-hidden="true"></i> {{user.name}}</a></li>
@@ -104,6 +98,7 @@ body {
 <form id="questionform" name="questionform" method="post" action="?c=submit_exam">
     <input type="hidden" name="e" value="{{data.id}}">
     <input type="hidden" name="uva_id" value="{{user.uva_id}}">
+    <input type="hidden" name="timermethod" id="timer_method" value="{{data.info.timer_method}}">
     {% set i = 1%}
     {% for question in data.questions %}
     <h3>Question {{i}}</h3>    
@@ -215,13 +210,7 @@ body {
                     {% endif %}
                     console.log(data);
                     var currentdate = new Date(); 
-                    var datetime = (currentdate.getMonth()+1)  + "/"
-                                    + currentdate.getDate() + "/" 
-                                    + currentdate.getFullYear() + " "  
-                                    + currentdate.getHours() + ":"  
-                                    + currentdate.getMinutes() + ":" 
-                                    + currentdate.getSeconds();
-                    $("#autosave-time").text(datetime);
+                    $("#autosave-time").text(currentdate.toLocaleString());
                     if (!autosave) {
                         $('#notification-message').slideUp();
                         // Show the success alert
@@ -250,48 +239,15 @@ body {
         }
         var autosavetimout = setInterval(autosave, 200000);
 
+        // Timer and time limits
+        var timer_method = null;
         {% if data.info.time_allowed %}
-        var timer_method = '{{data.info.timer_method}}';
+        timer_method = '{{data.info.timer_method}}';
         var timeallowed = {{data.info.time_allowed}};
         var timeleft = {{data.info.time.left ? data.info.time.left : 0}};
         var timeelapsed = {{data.info.time.elapsed ? data.info.time.elapsed : 0}};
-        var alerted = false;
-        var updateTimerInfo = function() {
-            var percleft = ((timeleft / timeallowed)*100);
-            console.log(timeleft + ' ' + percleft + ' ' + timeallowed);
-            if (timer_method == 'bar-down') {
-                $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
-                $('#timertext').text(timeleft + " minutes remaining");
-            } else if (timer_method == 'bar-up') {
-                $('#timerbar').css('width', (100-percleft)+'%').attr('aria-valuenow',(100-percleft));
-                $('#timertext').text("Elapsed time: " + timeelapsed + " mins");
-            }
-            {% if data.info.time_enforced == 't' %}
-            if (timeleft < 5 && timeleft > 0) {
-                autosave();
-                $('#timerbar').removeClass('progress-bar-info');
-                $('#timerbar').addClass('progress-bar-danger');
-            }
-
-            if (timeleft <= 2 && timeleft > 0 && !alerted) {
-                alert("Please finish up your work, there is about a minute left.");
-                alerted = true;
-            }
-            if (timeleft <= 0) {
-                // We are not going to prompt this time, just submit the page
-                window.onbeforeunload = function() {};
-                document.questionform.submit();
-            }
-            {% endif %}
-
-        }
-        var timer = function() {
-            timeleft = timeleft - 1;
-            timeelapsed = timeelapsed + 1;
-            updateTimerInfo();
-        }
-        var timertimeout = setInterval(timer, 60000); // update every minute
-        updateTimerInfo(); // run on page load
+        var time_enforced = {{data.info.time_enforced == 't' ? "true" : "false" }};
+        // End timer javascript
         {% endif %}
 
         $('#save').click(function(){
@@ -326,5 +282,62 @@ body {
 
     </script>
 {{ footer() }}
+
+{% if data.info.timer_method == 'choice' %}
+    <div class="modal fade" id="timerchoice" tabindex="-1" role="dialog" data-backdrop='static' data-show='true'>
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Choose a time-tracking system</h4>
+                </div>
+                <div class="modal-body">
+                    <p>You have {{data.info.time.left}} minutes allowed for this exam.  Please choose one of the following options so that we can help you keep track of your time.  The time will be displayed at the top of your exam.</p>
+                    <div class="list-group" style="cursor: pointer;">
+                        <a class="list-group-item" onClick="return chooseTimer('bar-down');">Count-down Timer Bar
+                            <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
+                                <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
+                                </div>
+                                <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                            </div>
+                        </a>
+                        <a class="list-group-item" onClick="return chooseTimer('bar-up');">Count-up Timer Bar
+                            <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
+                                <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 25%"> 
+                                </div>
+                                <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
+                            </div>
+                        </a>
+                        <a class="list-group-item" onClick="return chooseTimer('text-down');">Count-down Timer
+                            <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
+                                <span style="color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                            </p>
+                        </a>
+                        <a class="list-group-item" onClick="return chooseTimer('text-up');">Count-up Timer
+                            <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
+                                <span style="color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
+
+                            </p>
+                        </a>
+                        <a class="list-group-item" onClick="return chooseTimer('ten-warn');">10 minute warning pop-up (no time displayed)
+                            <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
+                                <span style="color:#333; line-height:2em; font-size: 12px;">There are less than 10 minutes left for this exam.</span>
+
+                            </p>
+                        </a>
+                    </div>
+                </div>
+                <!--<div class="modal-footer">
+                    <button type="button" class="btn btn-primary">Begin</button>
+                </div>-->
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <script>
+        $(document).ready(function(){
+            $("#timerchoice").modal('show');
+        });
+    </script>
+{% endif %}
 </body>
 </html>
