@@ -46,4 +46,24 @@ class Config {
      * Valid roles for participants
      */
     public static $VALID_ROLES = ["Student", "Instructor", "Secondary Instructor", "Teaching Assistant"];
+    
+    /**
+     * IP Address to SSH for testing
+     */
+    public static $TEST_MACHINE = "ipaddress";
+
+    /**
+     * User ID on the test machine
+     */
+    public static $TEST_MACHINE_USER = "testinguser";
+
+    /**
+     * Location of SSH Key for ssh
+     */
+    public static $TEST_MACHINE_RSA = "/PATH/TO/ssh_key";
+
+    /**
+     * Directory to use on test machine
+     */
+    public static $TEST_MACHINE_DIR = "/full/path/to/test/";
 }
