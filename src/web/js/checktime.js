@@ -4,34 +4,32 @@
         var updateTimerInfo = function() {
             var percleft = ((timeleft / timeallowed)*100);
             if (!timer_started) {
-                //timer_started = true;
+                timer_started = true;
                 if (timer_method == 'bar-down') {
                     $('#timer').css('visibility', 'visible');
                     $('#timer').addClass('progress');
                     $('#timerbar').css('visibility', 'visible');
-                    $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
-                    $('#timertext').text(timeleft + " minutes remaining");
                 } else if (timer_method == 'bar-up') {
                     $('#timer').css('visibility', 'visible');
                     $('#timer').addClass('progress');
                     $('#timerbar').css('visibility', 'visible');
-                    $('#timerbar').css('width', (100-percleft)+'%').attr('aria-valuenow',(100-percleft));
-                    $('#timertext').text("Elapsed time: " + timeelapsed + " mins");
                 } else if (timer_method == 'text-down') {
                     $('#timer').css('visibility', 'visible');
                     $('#timertext').css('font-size', 'inherit').css('color', '#9d9d9d');
-                    $('#timertext').text(timeleft + " minutes remaining");
-
                 } else if (timer_method == 'text-up') {
                     $('#timer').css('visibility', 'visible');
                     $('#timertext').css('font-size', 'inherit').css('color', '#9d9d9d');
-                    $('#timertext').text("Elapsed time: " + timeelapsed + " mins");
-
                 } 
             }
 
-            // ten minute warning
-            if (timer_method == 'ten-warn' && timeleft <= 10 && timeleft > 0 && !alerted) {
+            if (timer_method == 'bar-down' || timer_method == 'text-down') {
+                    $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
+                    $('#timertext').text(timeleft + " minutes remaining");
+            } else if (timer_method == 'bar-up' || timer_method == 'text-up') {
+                    $('#timerbar').css('width', (100-percleft)+'%').attr('aria-valuenow',(100-percleft));
+                    $('#timertext').text("Elapsed time: " + timeelapsed + " mins");
+            } else if (timer_method == 'ten-warn' && timeleft <= 10 && timeleft > 0 && !alerted) {
+                // ten minute warning
                 alert("There are less than 10 minutes left for this exam.");
                 alerted = true;
             }
@@ -87,7 +85,7 @@ function chooseTimer(choice) {
 } 
        
 $(document).ready(function() {
-        if (timer_method != null) {
+        if (timer_method != null && timer_method != 'choice') {
             var timertimeout = setInterval(timer, 60000); // update every minute
             updateTimerInfo(); // run on page load
         }
