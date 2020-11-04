@@ -1661,10 +1661,11 @@ class Helper {
         // Change directory command to issue on the server 
         $cdCmd = "cd " . \manager\Config::$TEST_MACHINE_DIR;
         $tmpDir = $info["id"]."_".time();
-        $startup = $ssh->exec("$cdCmd && mkdir $tmpDir\n");
+        $startup = $ssh->exec("$cdCmd && mkdir $tmpDir && mkdir $tmpDir/individual\n");
         $cdCmd = $cdCmd . $tmpDir; 
 
         $progress .= "Running tests\n\n";
+        $this->logger->addDebug("Running Tests", []);
 
         foreach ($info["questions"] as $question) {
 
@@ -1673,9 +1674,10 @@ class Helper {
                 continue; // we should not run if there are no tests
 
 
-            $progress .= "Running tests for the following question:\n----------------------------------------\n\n";
+            $progress .=  "Running tests for the following question:\n----------------------------------------\n\n";
+            $this->logger->addDebug("Testing question", [$question["text"]]);
 
-            $progress .= $question["text"]."\n\n";
+            $progress .=  $question["text"]."\n\n";
 
             // do the setup for this question
             $unitTests = $question["unit_tests"];
@@ -1687,28 +1689,46 @@ class Helper {
             list($scaffoldName, $junk) = explode(" ", $junk2);
             $scaffoldName = $scaffoldName . ".java";
 
+            // The following line could be used to supplement student code
+            //$getset = file_get_contents(\manager\Config::$TEMP_DIR."/getset.java");
+            
             $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$tmpDir."/".$unitTestName, $unitTests);
             
             foreach ($results["questions"][$question["id"]]["answers"] as $pid => $answer) {
-                $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$tmpDir."/".$scaffoldName, $answer["response"]);
-            
-                //$setupOut .= $ssh->exec("$cdCmd && pwd && javac $scaffoldName 2>&1\n");
-                $setupOut .= $ssh->exec("$cdCmd && javac -cp .:../lib/junit.jar:../lib/hamcrest.jar $scaffoldName $unitTestName 2>&1\n");
-                $junitOut = $ssh->exec("$cdCmd && java -cp .:../lib/junit.jar:../lib/hamcrest.jar org.junit.runner.JUnitCore $unitTestClassName 2>&1\n");
-                $cleanupOut = $ssh->exec("$cdCmd && rm *.class $scaffoldName\n");
+                $progress .= "Running for {$pid}\n===========================================\n";
 
-                // write the result to postgres
+                // The following could update the response to add supplemental class material
+                //list($pre, $post) = explode("//Constructor", $answer["response"]);
+                //$updated = $pre . "\n" . $getset . "\n" . $post;
+                
+                $updated = $answer["response"];
+                $progress .= $updated . "\n\n";
+
+                // Copy the student code and unit tests to a directory unique to this student
+                $setupOut = $ssh->exec("$cdCmd && mkdir individual/$pid\n");
+                $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$tmpDir."/individual/$pid/".$unitTestName, $unitTests);
+                $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$tmpDir."/individual/$pid/".$scaffoldName, $updated);
+
+                // Go to the student directory and compile and run code and JUnit tests
+                $setupOut .= $ssh->exec("$cdCmd && cd individual/$pid && javac -cp .:../../../lib/junit.jar:../../../lib/hamcrest.jar $scaffoldName $unitTestName 2>&1\n");
+                $junitOut = $ssh->exec("$cdCmd && cd individual/$pid && java -cp .:../../../lib/junit.jar:../../../lib/hamcrest.jar org.junit.runner.JUnitCore $unitTestClassName 2>&1\n");
 
                 // Make output more friendly
                 $junitOutClean = str_replace("FAILURES!!!","", $junitOut);
 
                 // Grab counts of tests and failures
+                // This MIGHT NOT report all the tests if there are some failures (some tests might not run)
                 preg_match('/Tests run:.*([0-9]+),.*Failures:.*([0-9]+)/', $junitOut, $matches);
                 preg_match('/There [wares]+ ([0-9]+) failure.*:/', $junitOut, $matches2);
+                // 100% success outputs only an OK line with tests passed
+                preg_match('/OK \(([0-9]+) tests\)*/', $junitOut, $matches3);
 
                 // Calculate Score
                 $score = 0;
-                if ($matches[2] == $matches2[1]) {
+                if (isset($matches3[1])) {
+                    // We got an OK line, so all tests passed
+                    $score = 1.0;
+                } else if ($matches[2] == $matches2[1]) {
                     $testsRun = $matches[1];
                     $failuresRun = $matches[2];
                     $passedRun = $testsRun - $failuresRun;
@@ -1719,7 +1739,9 @@ class Helper {
 
 
                 // Use JUnit Output as comments unless it's empty, then include setup
-                $comments = $setupOut . $junitOutClean . "\n\n--------------\nAutograder Score: $percentScore%";
+                $comments = $setupOut . $junitOutClean . "\n--------------\nAutograder Score: $percentScore%";
+                // Write output to the test system for debugging purposes
+                $sftp->put(\manager\Config::$TEST_MACHINE_DIR.$tmpDir."/individual/$pid/output.txt", $comments);
 
                 $progress .= $comments."\n\n";
                 $res = $this->db->query("update person_question
@@ -1736,11 +1758,13 @@ class Helper {
 
             $progress .= "Cleaning up test\n\n";
 
-            // clean up this test
-            $cleanupOut = $ssh->exec("$cdCmd && rm *.class *.java\n");
+            // clean up this test (commented out for debugging)
+            // $cleanupOut = $ssh->exec("$cdCmd && rm *.class *.java\n");
         }
 
-        $cleanupOut = $ssh->exec("$cdCmd && cd .. && rmdir $tmpDir\n");
+        // Clean up ignored for debugging purposes
+        //$cleanupOut = $ssh->exec("$cdCmd && cd .. && rmdir $tmpDir\n");
+        
         $progress .= "Finished running autograder tests\n";
 
 
