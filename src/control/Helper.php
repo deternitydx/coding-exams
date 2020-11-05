@@ -630,6 +630,8 @@ class Helper {
         $code = substr(sha1($this->user["uva_id"] . time()),0,8);
         $res = $this->db->query("update person_exam set date_taken = now(), code = $3 where person_id = $1 and exam_id = $2;",
             [$this->user["id"], $this->input["e"], $code]);
+        $res = $this->db->query("update person_question set submitted = true where person_id = $1 and exam_id = $2;",
+            [$this->user["id"], $this->input["e"]]);
 
         $this->dData["code"] = $code;
         return $this->display("submitsuccess");
@@ -804,10 +806,9 @@ class Helper {
             $res = $this->db->query("update person_question set grader = $2 where 
                 (person_id, question_id, exam_id) = 
                 (select pq.person_id, pq.question_id, pq.exam_id
-                    from person_question pq, person_exam pe
+                    from person_question pq
                     where pq.grader is null and pq.grade_time is null and 
-                    pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
-                    pe.date_taken is not null and pq.question_id = $1
+                    pq.submitted = true and pq.question_id = $1
                     limit 1 for update)
                 returning *;",
                 [$this->input['q'],
@@ -818,10 +819,9 @@ class Helper {
             $res = $this->db->query("update person_question set grader = $3 where 
                 (person_id, question_id, exam_id) = 
                 (select pq.person_id, pq.question_id, pq.exam_id
-                    from person_question pq, person_exam pe
+                    from person_question pq
                     where pq.person_id = $2 and 
-                    pq.person_id = pe.person_id and pq.exam_id = pe.exam_id and
-                    pe.date_taken is not null and pq.question_id = $1
+                    pq.submitted = true and pq.question_id = $1
                     limit 1 for update)
                 returning *;",
                 [$this->input['q'], $uid, $this->user["id"]]);
