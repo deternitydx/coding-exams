@@ -1900,6 +1900,7 @@ class Helper {
             $comments = "";
             $i = 1;
             $score = 0;
+            $body = "";
             foreach ($info["questions"] as $q) {
                 $response .= "<h3>Question $i</h3>\n";
                 $response .= $q["text"] . "<br>\n";
@@ -1907,11 +1908,20 @@ class Helper {
                     $response .= "<pre>".htmlspecialchars($exam["questions"][$q["id"]]["response"])."</pre>\n\n";
                 else
                     $response .= "<pre>NO RESPONSE</pre>\n\n";
+                $body .= "$response";
                 $comments .= "Question $i\n-----------\n";
-                if (isset($exam["questions"][$q["id"]]) && isset($exam["questions"][$q["id"]]["feedback"])
-                        && isset($exam["questions"][$q["id"]]["score"])) {
-                    $comments .= $exam["questions"][$q["id"]]["feedback"] . "\n";
-                    $comments .= "Score: " . $exam["questions"][$q["id"]]["score"] ." / ".$q["score"]."\n\n";
+                $curcomments = "";
+                if (isset($exam["questions"][$q["id"]]) 
+                    && isset($exam["questions"][$q["id"]]["score"])) {
+                    
+                    if (isset($exam["questions"][$q["id"]]["auto_grader"]))
+                        $curcomments .= "Autograder Results:\n" . $exam["questions"][$q["id"]]["auto_grader"] . "\n\n-----\n\n";
+                    
+                    if (isset($exam["questions"][$q["id"]]["feedback"]))
+                        $curcomments .= "Grader Feedback:\n" . $exam["questions"][$q["id"]]["feedback"] . "\n\n";
+                    $curcomments .= "Score: " . $exam["questions"][$q["id"]]["score"] ." / ".$q["score"]."\n\n";
+                    $body .= "<br><pre style='color: #000077; margin: 20px; border: 1px solid #000077; padding: 10px;'>$curcomments</pre>\n\n";
+                    $comments .= $curcomments;
                     $score += $exam["questions"][$q["id"]]["score"];
                 } else {
                     $comments .= "Score: 0 / ".$q["score"]."\n\n";
@@ -1931,7 +1941,7 @@ class Helper {
             ]);
 
             // run pandoc to take response from html to pdf
-            $fullhtml = "<html><head><title>Exam Submission: {$exam["uva_id"]}</title></head><body>$response</body></html>";
+            $fullhtml = "<html><head><title>Exam Submission: {$exam["uva_id"]}</title></head><body>$body</body></html>";
             // pandoc -f html -t pdf (pipe fullhtml as input and capture output)
             $pdfDoc = null;
 
