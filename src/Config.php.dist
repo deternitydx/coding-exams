@@ -43,6 +43,16 @@ class Config {
     public static $LOG_FILE = "/PATH/TO/log.txt";
     
     /**
+     * Should the system log every save to file? 
+     */
+    public static $SAVE_LOG = false; 
+
+    /**
+     * Save log file location
+     */
+    public static $SAVE_LOG_FILE = "/PATH/TO/savelog";
+
+    /**
      * Valid roles for participants
      */
     public static $VALID_ROLES = ["Student", "Instructor", "Secondary Instructor", "Teaching Assistant"];

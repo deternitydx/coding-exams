@@ -13,6 +13,7 @@ use \manager\Config as Config;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use phpseclib\Net\SFTP;
+use \Monolog\Handler\StreamHandler;
 
 
 /**
@@ -50,6 +51,11 @@ class Helper {
      * @var \Monolog\Logger The logger for this instance
      */
     private $logger;
+    
+    /**
+     * @var \Monolog\Logger The save logger for this instance
+     */
+    private $saveLogger;
 
     /**
      * Constructor
@@ -61,6 +67,20 @@ class Helper {
         global $log;
         $this->logger = new \Monolog\Logger('Helper');
         $this->logger->pushHandler($log);
+
+        if (\manager\Config::$SAVE_LOG === true) {
+            $savelog = new StreamHandler(\manager\Config::$SAVE_LOG_FILE, \Monolog\Logger::DEBUG);
+
+            // the default date format is "Y-m-d\TH:i:sP"
+            $dateFormat = "Y-m-d\TH:i:sP";
+            $output = "%datetime%\t%context%\n";
+            // finally, create a formatter
+            $formatter = new \Monolog\Formatter\LineFormatter($output, $dateFormat);
+            $savelog->setFormatter($formatter);
+            $this->saveLogger = new \Monolog\Logger('SaveLog');
+            $this->saveLogger->pushHandler($savelog);
+        }
+
 
         $this->dData = array();
         $this->db = new \manager\control\DatabaseConnector();
@@ -572,6 +592,10 @@ class Helper {
     public function handleSaveExam() {
         $result = ["result" => "error", "error"=> "Unknown error occurred"];
         $exam = $this->loadQuestions();
+
+        if ($this->saveLogger != null) {
+            $this->saveLogger->addNotice("", ["user" => $this->user["id"], "qs" => $this->input["q"], "responses" => $this->input["response"]]);
+        }
 
         foreach ($this->input["q"] as $k => $q) {
             $res = $this->db->query("select pq.response from person_question pq where pq.person_id = $1
