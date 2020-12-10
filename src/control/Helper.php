@@ -1650,17 +1650,19 @@ class Helper {
     }
 
     /**
-     * Download Grades
+     * Run JUnit over Class 
      *
-     * Packages up the grades and creates a ZIP file compatible with 
-     * UVA Collab for upload.  This creates the grades file, then turns
-     * the submissions into PDFs for the students to view their submissions.
+     * Runs JUnit over any questions for the current exam that have defined unit tests.
+     * Currently only uses JUnit 4.
      *
-     * @param int $onlyid optional currently unused
-     * @return Contents of the created zipfile
+     * @param int $onlyid Only run JUnit for this student.  If null, run for all students 
+     * @return Output for display 
      */
-    public function runJUnit($onlyid = null) {
-        $results = $this->loadResults(null, $onlyid);
+    public function runJUnitClass($onlyid = null) {
+        $uid = $onlyid;
+        if (isset($this->input["u"]) && !empty($this->input["u"]))
+            $uid = $this->input["u"];
+        $results = $this->loadResults(null, $uid);
         $info = $results["info"];
         
         if (!$this->isInstructor($this->user["id"], $this->input["e"]))
@@ -1783,11 +1785,11 @@ class Helper {
             $progress .= "Cleaning up test\n\n";
 
             // clean up this test (commented out for debugging)
-            // $cleanupOut = $ssh->exec("$cdCmd && rm *.class *.java\n");
+            $cleanupOut = $ssh->exec("$cdCmd && rm *.class *.java\n");
         }
 
         // Clean up ignored for debugging purposes
-        //$cleanupOut = $ssh->exec("$cdCmd && cd .. && rmdir $tmpDir\n");
+        $cleanupOut = $ssh->exec("$cdCmd && cd .. && rmdir $tmpDir\n");
         
         $progress .= "Finished running autograder tests\n";
 

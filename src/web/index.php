@@ -123,7 +123,7 @@ switch ($command) {
         echo $helper->showStudentExam();
         break;
     case "autograde":
-        echo $helper->runJUnit();
+        echo $helper->runJUnitClass();
         break;
     default:
         echo $helper->showHome();
