@@ -122,8 +122,14 @@ switch ($command) {
     case "view_student_exam":
         echo $helper->showStudentExam();
         break;
-    case "autograde":
+    case "autograde_mc":
+        echo $helper->runMCAutograde();
+        break;
+    case "autograde_junit":
         echo $helper->runJUnitClass();
+        break;
+    case "course":
+        echo $helper->showCourse();
         break;
     default:
         echo $helper->showHome();

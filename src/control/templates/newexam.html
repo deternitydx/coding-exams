@@ -160,6 +160,7 @@ textarea {
                             <option {{ (question.language == 'python') ? "selected" : ""}} value="python">Python</option>
                             <option {{ (question.language == 'markdown') ? "selected" : ""}} value="markdown">Markdown</option>
                             <option {{ (question.language == 'text') ? "selected" : ""}} value="text">Plain Text</option>
+                            <option {{ (question.language == 'multiplechoice') ? "selected" : ""}} value="multiplechoice">Multiple Choice</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -201,6 +202,7 @@ textarea {
                             <option value="python">Python</option>
                             <option value="markdown">Markdown</option>
                             <option value="text">Plain Text</option>
+                            <option value="multiplechoice">Multiple Choice</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -322,6 +324,8 @@ textarea {
               var mode = "text/x-java";
               var tmp = obj.closest(".question-group").find(".language").children("option:selected").val();
               console.log(tmp);
+              if (tmp == "multiplechoice")
+                  mode = "text/plain";
               if (tmp == "text")
                   mode = "text/plain";
               if (tmp == "markdown")
@@ -378,6 +382,7 @@ textarea {
                             <option selected value="java">Java</option>
                             <option value="python">Python</option>
                             <option value="text">Plain Text</option>
+                            <option value="multiplechoice">Multiple Choice</option>
                         </select>
                     </div>
                     <div class="form-group">

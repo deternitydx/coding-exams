@@ -141,6 +141,32 @@ class Helper {
         return $this->display("home");
     }
     
+
+    /**
+     * Show course page
+     *
+     * Shows the course page 
+     *
+     * @return string HTML display data from the templating engine
+     */
+    public function showCourse() {
+        $data = $this->loadCourses();
+        $cid = $this->input["course"];
+        $course = null;
+        $allowed = false;
+        foreach ($data as $y) {
+            foreach ($y as $c) {
+                if ($c["id"] == $cid) {
+                    $course = $c;
+                }
+            }
+        }
+        if ($course != null) {
+            $this->dData = $course;
+            return $this->display("course");
+        }
+        die($this->showError("You do not have permission to view this course"));
+    }
     
     
     /**
@@ -601,6 +627,9 @@ class Helper {
             $res = $this->db->query("select pq.response from person_question pq where pq.person_id = $1
                 and pq.question_id = $2 and pq.exam_id = $3;", [$this->user["id"], $q, $this->input["e"]]);
             $all = $this->db->fetchAll($res);
+
+            if (!isset($this->input["response"][$k]))
+                $this->input["response"][$k] = "";
 
             // If student already has written a partial response, then replace
             if (isset($all[0]) && isset($all[0]["response"])) {
@@ -1068,6 +1097,21 @@ class Helper {
     }
 
     /**
+     * Parse options from text
+     */
+    private function parseOptions($text) {
+        $options = [];
+        $lines = explode("\n", $text);
+        $current = "";
+        foreach ($lines as $line) {
+            $key = substr($line, 0, 1);
+            $value = substr($line, 3);
+            $options[$key] = $value;
+        }
+        return $options;
+    }
+
+    /**
      * Load Questions
      *
      * Loads all questions for a given exam (either by parameter or input).  Ensures that
@@ -1163,6 +1207,11 @@ class Helper {
                 "code" => $row["code"],
                 "language" => $row["language"]
             ];
+
+            if ($row["language"] == "multiplechoice") {
+                $exam["questions"][$row["ordering"]]["options"] = $this->parseOptions($row["code"]);
+                $exam["questions"][$row["ordering"]]["code"] = "";
+            }
 
             $res2 = $this->db->query("select pq.response from person_question pq where pq.person_id = $1
                 and pq.question_id = $2 and pq.exam_id = $3;", [$this->user["id"], $row["id"], $row["exam_id"]]);
@@ -1640,14 +1689,79 @@ class Helper {
         ];
         foreach ($results["exams"] as $exam)
             $this->dData["exam"] = $exam;
-        foreach ($results["info"]["questions"] as $q)
+        foreach ($results["info"]["questions"] as $q) {
+            if ($q["language"] == "multiplechoice")
+                $q["options"] = $this->parseOptions($q["code"]);
             $this->dData["questions"][$q["id"]] = $q;
+        }
         $this->dData["exam"]["score"] = 0;
         foreach ($this->dData["exam"]["questions"] as $q)
             $this->dData["exam"]["score"] += $q["score"];
         return $this->display("viewexam");
         
     }
+    
+    /**
+     * Run Multiple Choice Autograder 
+     *
+     * Runs MC over any questions for the current exam. 
+     *
+     * @param int $onlyid Only autograde for this student.  If null, run for all students 
+     * @return Output for display 
+     */
+    public function runMCAutograde($onlyid = null) {
+        $uid = $onlyid;
+        if (isset($this->input["u"]) && !empty($this->input["u"]))
+            $uid = $this->input["u"];
+        $results = $this->loadResults(null, $uid);
+        $info = $results["info"];
+        
+        if (!$this->isInstructor($this->user["id"], $this->input["e"]))
+            die($this->showError("You do not have permissions to view this exam"));
+
+        $progress = "Running autograder\n\n";
+        $this->logger->addDebug("Running Tests", []);
+
+        foreach ($info["questions"] as $question) {
+
+            // check if should run tests
+            if ($question["language"] != "multiplechoice")
+                continue; // we should not run if there are no tests
+
+            $progress .=  "Running autograder for the following question:\n----------------------------------------\n";
+            $progress .=  $question["text"]."\n\n";
+             
+            foreach ($results["questions"][$question["id"]]["answers"] as $pid => $answer) {
+                $score = 0;
+                print_r($answer);
+
+                print_r($question);
+                if ($answer["response"] == $question["correct"]) {
+                    $score = $question["score"];
+                }
+                $progress .= "Score was $score\n"; 
+                $res = $this->db->query("update person_question
+                    set score = $3
+                    where person_id = $1 and question_id = $2;", 
+                    [
+                        $pid,
+                        $question["id"],
+                        $score
+                    ]);
+            } 
+        }
+        
+        $progress .= "Finished running autograder\n";
+
+
+        $this->dData = [
+            'info' => $info,
+            'progress' => $progress
+        ];
+
+        return $this->display("autograder");
+
+    }    
 
     /**
      * Run JUnit over Class 
