@@ -96,12 +96,19 @@ h4 {
                         {{exam.title}}
                     </h4>
                 </div>
-                <!--
+                {% if exam.time_allowed and exam.date_taken == "" and not exam.closed %}
                 <div id="collapse{{i}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{i}}">
                     <div class="panel-body">
+                        <b>Please note: </b>You are allowed to take 
+                        {% if exam.time_allowed >= 60 %}
+                            {{ exam.time_allowed // 60 }} hours and 
+                        {% else %}
+                            {{ exam.time_allowed % 60 }} minutes
+                        {% endif %}
+                        on this exam.  The timer starts as soon as you click "Take Exam" above.
                     </div>
                 </div>
-                -->
+                {% endif %}
             </div>
         {% set i = i + 1 %}
         {% endfor %}

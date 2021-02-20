@@ -1261,7 +1261,7 @@ class Helper {
                 ];
         }
         
-        $res = $this->db->query("select c.title as course, c.year, c.semester, c.uva_id as courseid, e.title,
+        $res = $this->db->query("select c.title as course, c.year, c.semester, c.uva_id as courseid, e.title, e.time_allowed,
             e.id, e.date, e.open, e.close, e.closed, pc.role from course c, exam e, person_course pc where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 order by c.year desc, c.semester asc, e.id asc;", [$this->user["id"]]);
         $all = $this->db->fetchAll($res);
 
@@ -1286,6 +1286,7 @@ class Helper {
                 "date" => $row["date"],
                 "open" => $row["open"],
                 "close" => $row["close"],
+                "time_allowed" => $row["time_allowed"],
                 "closed" => $row["closed"] == 't' ? true : false
             ];
 
