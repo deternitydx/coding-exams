@@ -65,8 +65,8 @@ body {
                 <div class="panel-body">
                     <table style="border: 0px; width: 100%;">
                     {% set i = 1%}
-                    {% for qid, question in data.exam.questions %}
-                        <tr><td><a href="#qn{{i}}">Question {{i}}</a></td><td style="text-align: right;">{{question.score}}</td></tr>    
+                    {% for qid, question in data.questions %}
+                        <tr><td><a href="#qn{{i}}">Question {{i}}</a></td><td style="text-align: right;">{{data.exam.questions[qid].score}}</td></tr>    
                         {% set i = i + 1 %}
                     {% endfor %}
                     <tr><td><b>Total</b></td><td style="text-align: right;">{{data.exam.score}}</td></tr>    
@@ -81,16 +81,16 @@ body {
     </div>
 
     {% set i = 1%}
-    {% for qid, question in data.exam.questions %}
+    {% for qid, question in data.questions %}
     <h3 style="padding-top: 50px;" id="qn{{i}}">Question {{i}}</h3>    
-        <div>{{data.questions[qid].text|raw}}</div>
+        <div>{{question.text|raw}}</div>
         <div style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #000; margin-top:20px;">
-            <textarea name="response[]" class="la-{{data.questions[qid].language}}" style="width: 100%; height: 100%;">{{question.response}}</textarea>
+            <textarea name="response[]" class="la-{{question.language}}" style="width: 100%; height: 100%;">{{data.exam.questions[qid].response}}</textarea>
         </div>
-        <div><p><b>Score: {{question.score}} / {{data.questions[qid].score}}</b></p>
-        <p><b>Grader Feedback:</b><br/> {{question.feedback}}</p>
+        <div><p><b>Score: {{data.exam.questions[qid].score}} / {{question.score}}</b></p>
+        <p><b>Grader Feedback:</b><br/> {{data.exam.questions[qid].feedback}}</p>
         {% if question.auto_grader %}
-        <p><b>Autograder Feedback:</b></p><pre>{{question.auto_grader}}</pre>
+        <p><b>Autograder Feedback:</b></p><pre>{{data.exam.qeustions[qid].auto_grader}}</pre>
         {% endif %}
         </div>
         {% set i = i + 1 %}

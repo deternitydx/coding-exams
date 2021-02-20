@@ -1887,6 +1887,66 @@ class Helper {
                 header('Content-Type: application/json');
                 //header('Content-disposition: attachment; filename=grade-summary.csv');
                 return json_encode($grades, JSON_PRETTY_PRINT);
+            } else if ($this->input["format"] == "text-zip") {
+                $zip = new \ZipArchive();
+                // make the zip file unique
+                $zipname = Config::$TEMP_DIR . "/". $info["id"] . "_" . time() . ".zip";
+                $zip->open($zipname, \ZipArchive::CREATE);
+                foreach ($results["exams"] as $exam) {
+                    // only download student grades
+                    if ($exam["role"] !== "Student")
+                        continue;
+
+                    //$uzdir = "$zdir/{$exam["name"]}({$exam["uva_id"]})";
+
+                    $response = "";
+                    $comments = "";
+                    $i = 1;
+                    $score = 0;
+                    $body = "";
+                    foreach ($info["questions"] as $q) {
+                        $response = "Question $i\n-------------\n";
+                        $response .= "Question:\n".$q["text"] . "\n\nResponse:\n";
+                        if (isset($exam["questions"][$q["id"]]) && isset($exam["questions"][$q["id"]]["response"]))
+                            $response .= $exam["questions"][$q["id"]]["response"]."\n\n";
+                        else
+                            $response .= "NO RESPONSE\n\n";
+                        $body .= "$response";
+                        $comments .= "Question $i\n-----------\n";
+                        $curcomments = "";
+                        if (isset($exam["questions"][$q["id"]]) 
+                            && isset($exam["questions"][$q["id"]]["score"])) {
+
+                            if (isset($exam["questions"][$q["id"]]["auto_grader"]))
+                                $curcomments .= "Autograder Results:\n" . $exam["questions"][$q["id"]]["auto_grader"] . "\n-----\n";
+
+                            if (isset($exam["questions"][$q["id"]]["feedback"]))
+                                $curcomments .= "Grader Feedback:\n" . $exam["questions"][$q["id"]]["feedback"] . "\n";
+                            $curcomments .= "Score: " . $exam["questions"][$q["id"]]["score"] ." / ".$q["score"]."\n";
+                            $body .= "$curcomments\n";
+                            $comments .= $curcomments;
+                            $score += $exam["questions"][$q["id"]]["score"];
+                        } else {
+                            $comments .= "Score: 0 / ".$q["score"]."\n\n";
+                        }
+
+                        $i++;
+                    }
+                    $comments .= "-------------------\nFinal Score: $score\n";
+                    $zip->addFromString("{$exam["uva_id"]}.txt", $body);
+                }
+                // close zip for downloading
+                $zip->close();
+
+                // show ZIP file
+                header('Content-Type: application/zip');
+                header('Content-disposition: attachment; filename=exam_submissions.zip');
+                header('Content-Length: ' . filesize($zipname));
+                $zipfile = file_get_contents($zipname); 
+
+                // remove the zip from the local filesystem
+                unlink($zipname);
+                return $zipfile;
             }
         }
 
@@ -1928,7 +1988,7 @@ class Helper {
             $score = 0;
             $body = "";
             foreach ($info["questions"] as $q) {
-                $response .= "<h3>Question $i</h3>\n";
+                $response = "<h3>Question $i</h3>\n";
                 $response .= $q["text"] . "<br>\n";
                 if (isset($exam["questions"][$q["id"]]) && isset($exam["questions"][$q["id"]]["response"]))
                     $response .= "<pre>".htmlspecialchars($exam["questions"][$q["id"]]["response"])."</pre>\n\n";
@@ -1965,7 +2025,7 @@ class Helper {
                 "", // submission date
                 "" // late submission
             ]);
-
+            
             // run pandoc to take response from html to pdf
             $fullhtml = "<html><head><title>Exam Submission: {$exam["uva_id"]}</title></head><body>$body</body></html>";
             // pandoc -f html -t pdf (pipe fullhtml as input and capture output)
