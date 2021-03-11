@@ -87,7 +87,7 @@ h4 {
                         {% if exam.closed %}
                             <span class="btn btn-primary disabled">Exam Closed</span> 
                         {% elseif exam.date_taken == "" %}
-                            <a href="?c=exam&e={{exam.id}}" class="btn btn-primary" target="_blank">Take Exam</a> 
+                            <a href="?c=exam&e={{exam.id}}" class="btn btn-primary takeexam" target="_blank">Take Exam</a> 
                         {% else %}
                             <span class="btn btn-primary disabled">Already Taken</span> 
                         {% endif %}
@@ -100,11 +100,7 @@ h4 {
                 <div id="collapse{{i}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{i}}">
                     <div class="panel-body">
                         <b>Please note: </b>You are allowed to take 
-                        {% if exam.time_allowed >= 60 %}
-                            {{ exam.time_allowed // 60 }} hours and 
-                        {% else %}
-                            {{ exam.time_allowed % 60 }} minutes
-                        {% endif %}
+                        {{ exam.time_allowed }} minutes
                         on this exam.  The timer starts as soon as you click "Take Exam" above.
                     </div>
                 </div>
@@ -112,6 +108,12 @@ h4 {
             </div>
         {% set i = i + 1 %}
         {% endfor %}
+
+        {% if i == 0 %}
+        <div class="well well-lg" style="margin-top: 30px;">
+            <p class="text-center">There are currently no exams for this course</p>
+        </div>
+        {% endif %}
         </div>
     </div>
 
@@ -120,5 +122,12 @@ h4 {
 </body>
 </html>
 
+    <script>
+        $('.takeexam').click(function(){
+            $(this).attr("disabled", true);
+            $(this).addClass("disabled");
+            return true;
+        });
 
+    </script>
 

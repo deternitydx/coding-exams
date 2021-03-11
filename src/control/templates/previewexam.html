@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Exam View</title>
+    <title>Exam Preview</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -71,7 +71,6 @@ input[type="radio"] {
         </div>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav"><li>
-                    <a id="savetop" href="#"><i class="fa fa-save" aria-hidden="true"></i> Save Progress</a>
                 </li>
                 <li><p class="navbar-text"><span id="autosave-time-top"></span></p></li>
             </ul>
@@ -85,11 +84,6 @@ input[type="radio"] {
                             <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;"></span>
                         </div>
                     </li>
-                    {% if data.info.timer_method == 'hide-stoplight' %}
-                    <li>
-                        <a id="toggletimer" href="#">Hide Timer</a>
-                    </li>
-                    {% endif %}
                     {% endif %}
                     <li><a href="#"><i class="fa fa-user-circle" aria-hidden="true"></i> {{user.name}}</a></li>
                 </ul>
@@ -99,7 +93,7 @@ input[type="radio"] {
 </nav>
 
 <div class="container" role="main">
-    <h1>{{data.title}}: {{user.name}} ({{user.uva_id}})</h1>
+    <h1>{{data.title}}: Exam Preview</h1>
 
     {% if data.instructions %}
     <div class="well well-lg">{{data.instructions|raw}}</div>
@@ -109,10 +103,10 @@ input[type="radio"] {
         <input type="hidden" name="e" value="{{data.id}}">
         <input type="hidden" name="uva_id" value="{{user.uva_id}}">
         <input type="hidden" name="timermethod" id="timer_method" value="{{data.info.timer_method}}">
-        <input type="hidden" name="timerhidden" id="timer_hidden" value="false">
         {% set i = 1%}
         {% for question in data.questions %}
         <h4>Question {{i}} <span style="font-size: 14px;">({{question.score}} points)</span></h4>
+            
             <div>{{question.text|raw}}</div>
             <input type="hidden" name="q[{{i}}]" value="{{question.id}}">
             {% if question.language == 'multiplechoice' %}
@@ -145,16 +139,10 @@ input[type="radio"] {
                     <p></p>
                 </div><!-- end alert -->
             </div>
-            <div class="col-md-4" style="text-align:right; ">
-                <button class="btn btn-primary" id="save">Save Progress</button>
-                <button class="btn btn-danger" id="submitBtn">Submit Exam</button>
-            </div>
         </div>
     </form>
 </div>
 <script>
-      var submitting = false;
-      var lastsave = false;
       $("textarea.la-java").each(function() {
           var obj = $(this);
           obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
@@ -212,67 +200,6 @@ input[type="radio"] {
           });
       });
 
-      function saveTextAreas() {
-          // Save any XML editor contents back to their text areas before saving
-          $("textarea").each(function() {
-              var obj = $(this);
-              if (obj.get(0).CodeMirror) {
-                  obj.get(0).CodeMirror.save();  
-              }
-          });
-      }
-
-      function save(autosave) {
-            if (!autosave) {
-                // Open up the warning alert box and note that we are saving
-                $('#notification-message').html("<p>Saving answers... Please wait.</p>");
-                $('#notification-message').slideDown();
-            }
-            saveTextAreas();  
-
-            // Send the data back by AJAX call
-            $.post("?c=save_exam", $("#questionform").serialize(), function (data) {
-                // Check the return value from the ajax. If success, then alert the
-                // user and make appropriate updates.
-                if (data.result == "success") {
-                    {% if data.info.time_allowed %}
-                        if ((typeof data.time) != 'undefined') {
-                            timeleft = data.time.left;
-                        }
-                    {% endif %}
-                    console.log(data);
-                    var currentdate = new Date(); 
-                    $("#autosave-time").text(currentdate.toLocaleString());
-                    if (!autosave) {
-                        $('#notification-message').slideUp();
-                        // Show the success alert
-                        $('#success-message').html("<p>Saved successfully!</p>");
-                        setTimeout(function(){
-                            $('#success-message').slideDown();
-                        }, 1000);
-                        setTimeout(function(){
-                            $('#success-message').slideUp();
-                        }, 3000);
-                        $("#autosave-time-top").text("");
-                    }
-                } else {
-                    $('#notification-message').slideUp();
-                    // Something went wrong in the ajax call. Show an error.
-                    console.log(data);
-                    $('#error-message').html("<p>Error: "+data.error+".  Please print to PDF before submitting.</p>");
-                    $('#error-message').slideDown();
-                    $("#autosave-time-top").text("Save Error");
-                }
-
-            });
-      }
-
-        // Autosave
-        var autosave = function() {
-            save(true);
-        }
-        var autosavetimout = setInterval(autosave, 200000);
-
         // Timer and time limits
         var timer_method = null;
         {% if data.info.time_allowed %}
@@ -283,63 +210,6 @@ input[type="radio"] {
         var time_enforced = {{data.info.time_enforced == 't' ? "true" : "false" }};
         // End timer javascript
         {% endif %}
-
-        {% if data.info.timer_method == 'hide-stoplight' %}
-        $('#toggletimer').click(function() {
-            var hidden = $('#timer_hidden').val();
-
-            if (hidden == 'false') {
-                $('#timer_hidden').val("true");
-                $('#timer').css('visibility', 'hidden');
-                $('#timerbar').css('visibility', 'hidden');
-                $('#timertext').css('visibility', 'hidden');
-                $('#toggletimer').text("Show Timer");
-            } else {
-                $('#timer_hidden').val("false");
-                $('#timer').css('visibility', 'visible');
-                $('#timerbar').css('visibility', 'visible');
-                $('#timertext').css('visibility', 'visible');
-                $('#toggletimer').text("Hide Timer");
-            }
-            return false;
-        });
-        {% endif %}
-        
-        $('#save').click(function(){
-            save(false);
-            return false;
-        });
-
-        $('#savetop').click(function(){
-            save(false);
-            return false;
-        });
-
-        $('#submitBtn').click(function(){
-            submitting = true;
-            saveTextAreas();
-            if (confirm("Are you completely finished with the coding portion of the exam?  You may not return."))
-                document.questionform.submit();
-            else {
-                submitting = false;
-                return false;
-            }
-        });
-
-
-        function unloadPage(e) {
-            if (!submitting) {
-                var message = 'You may have unsaved changes on this exam.  Are you sure you want to leave the page?';
-                var e = e || window.event;
-                // For IE and Firefox
-                if (e) { e.returnValue = message; }
-                // For Safari
-                return message;
-            }
-        }
-        window.onbeforeunload = unloadPage;
-
-
     </script>
 {{ footer() }}
 

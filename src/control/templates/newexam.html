@@ -37,6 +37,7 @@
 <script src="js/codemirror/addon/hint/show-hint.js"></script>
 <script src="js/codemirror/mode/python/python.js"></script>
 <script src="js/codemirror/mode/markdown/markdown.js"></script>
+<script src="js/codemirror/mode/sql/sql.js"></script>
 <script src="js/clike.js"></script>
 
 <link href="//cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.css" rel="stylesheet">
@@ -72,6 +73,10 @@ textarea {
         color: #555;
     font-style:italic;
         text-align: right;
+}
+
+input[type="radio"] {
+    margin-top: 0px;
 }
 </style>
 </head>
@@ -142,90 +147,117 @@ textarea {
                         <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="choice" {{data.examdata.info.timer_method == 'choice' ? 'checked'}}> Student Choice
                         </label>
                     </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="study" {{data.examdata.info.timer_method == 'study' ? 'checked'}}> Current Study Method
+                        </label>
+                    </div>
                 </div>
                 {% if data.examdata.info.questions %}
                 {% for question in data.examdata.info.questions %}
-                <div class="question-group">
-                    <h3>Question</h3>
-                    <input type="hidden" name="questionid[]" value="{{question.id}}">
-                    <div class="form-group">
-                        <label for="question[]">Text</label>
-                        <textarea name="question[]" class="htmltext">{{question.text}}</textarea>
-                        <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
+                <div class="question-group panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Question</h3>
                     </div>
-                    <div class="form-group">
-                        <label for="language[]">Syntax Highlight Language</label>
-                        <select name="language[]" class="language">
-                            <option {{ (question.language == 'java') ? "selected" : ""}} value="java">Java</option>
-                            <option {{ (question.language == 'python') ? "selected" : ""}} value="python">Python</option>
-                            <option {{ (question.language == 'markdown') ? "selected" : ""}} value="markdown">Markdown</option>
-                            <option {{ (question.language == 'text') ? "selected" : ""}} value="text">Plain Text</option>
-                            <option {{ (question.language == 'multiplechoice') ? "selected" : ""}} value="multiplechoice">Multiple Choice</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
-                        <textarea name="code[]" class="codetext">{{question.code}}</textarea>
-                        <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="answer[]">Answer (Syntax Highlighted)</label>
-                        <textarea name="answer[]" class="codetext">{{question.correct}}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="rubric[]">Rubric (Text Only)</label>
-                        <textarea name="rubric[]" class="textonly">{{question.rubric}}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="autograder[]">JUnit Tests</label>
-                        <textarea name="autograder[]" class="codetext">{{question.unit_tests}}</textarea>
-                        <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other import statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="score[]">Max Points</label>
-                        <input type="text" class="form-control" name="score[]" placeholder="" value="{{question.score}}">
+                    <div class="panel-body">
+                        <input type="hidden" name="questionid[]" value="{{question.id}}">
+                        <div class="form-group">
+                            <label for="question[]">Text</label>
+                            <textarea name="question[]" class="htmltext">{{question.text}}</textarea>
+                            <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="language[]">Question Type</label><br>
+                                    <select name="language[]" class="language">
+                                        <option {{ (question.language == 'java') ? "selected" : ""}} value="java">Java</option>
+                                        <option {{ (question.language == 'python') ? "selected" : ""}} value="python">Python</option>
+                                        <option {{ (question.language == 'markdown') ? "selected" : ""}} value="markdown">Markdown</option>
+                                        <option {{ (question.language == 'sql') ? "selected" : ""}} value="sql">SQL</option>
+                                        <option {{ (question.language == 'text') ? "selected" : ""}} value="text">Plain Text</option>
+                                        <option {{ (question.language == 'multiplechoice') ? "selected" : ""}} value="multiplechoice">Multiple Choice</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="score[]">Max Points</label>
+                                    <input type="text" class="form-control" name="score[]" placeholder="" value="{{question.score}}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="code[]">Code/Student Scaffolding (Syntax Highlighted) or Multiple Choice Options</label>
+                            <textarea name="code[]" class="codetext">{{question.code}}</textarea>
+                            <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="answer[]">Answer (Syntax Highlighted)</label>
+                            <textarea name="answer[]" class="codetext">{{question.correct}}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="rubric[]">Rubric (Text Only)</label>
+                            <textarea name="rubric[]" class="textonly">{{question.rubric}}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="autograder[]">JUnit Tests</label>
+                            <textarea name="autograder[]" class="codetext">{{question.unit_tests}}</textarea>
+                            <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other import statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
                 {% else %}
-                <div class="question-group">
-                    <h3>Question</h3>
-                    <div class="form-group">
-                        <label for="question[]">Text (use HTML tags)</label>
-                        <textarea name="question[]" class="htmltext"></textarea>
-                        <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
+                <div class="question-group panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Question</h3>
                     </div>
-                    <div class="form-group">
-                        <label for="language[]">Syntax Highlight Language</label>
-                        <select name="language[]" class="language">
-                            <option selected value="java">Java</option>
-                            <option value="python">Python</option>
-                            <option value="markdown">Markdown</option>
-                            <option value="text">Plain Text</option>
-                            <option value="multiplechoice">Multiple Choice</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
-                        <textarea name="code[]" class="codetext"></textarea>
-                        <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="answer[]">Answer (Syntax Highlighted)</label>
-                        <textarea name="answer[]" class="codetext"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="rubric[]">Rubric (Text Only)</label>
-                        <textarea name="rubric[]" class="textonly"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="autograder[]">JUnit Tests</label>
-                        <textarea name="autograder[]" class="codetext"></textarea>
-                        <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other include statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="score[]">Max Points</label>
-                        <input type="text" class="form-control" name="score[]" placeholder="">
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <label for="question[]">Text (use HTML tags)</label>
+                            <textarea name="question[]" class="htmltext"></textarea>
+                            <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="language[]">Question Type</label><br>
+                                    <select name="language[]" class="language">
+                                        <option selected value="java">Java</option>
+                                        <option value="python">Python</option>
+                                        <option value="markdown">Markdown</option>
+                                        <option value="sql">SQL</option>
+                                        <option value="text">Plain Text</option>
+                                        <option value="multiplechoice">Multiple Choice</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="score[]">Max Points</label>
+                                    <input type="text" class="form-control" name="score[]" placeholder="">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="code[]">Code/Student Scaffolding (Syntax Highlighted) or Multiple Choice Options</label>
+                            <textarea name="code[]" class="codetext"></textarea>
+                            <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="answer[]">Answer (Syntax Highlighted)</label>
+                            <textarea name="answer[]" class="codetext"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="rubric[]">Rubric (Text Only)</label>
+                            <textarea name="rubric[]" class="textonly"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="autograder[]">JUnit Tests</label>
+                            <textarea name="autograder[]" class="codetext"></textarea>
+                            <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other include statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
@@ -256,6 +288,7 @@ textarea {
         ]
     };
       loadTextareas();
+      updateCodemirrors();
 
       function loadTextareas() {
           $(".container").find("textarea.textonly").each(function() {
@@ -263,6 +296,7 @@ textarea {
               if (!obj.get(0).CodeMirror) {
                   obj.get(0).CodeMirror = CodeMirror.fromTextArea(obj.get(0), {
                       lineNumbers: true,
+                      mode: "text/plain",
                       tabSize: 4,
                       viewportMargin: Infinity
                   });
@@ -272,7 +306,7 @@ textarea {
               var obj = $(this);
               if (!obj.get(0).SummerNote) {
                   obj.get(0).SummerNote = obj.summernote({
-                        height: 300,
+                        //height: 300,
                          toolbar: [
                             // [groupName, [list of button]]
                             ['style', ['style']],
@@ -330,6 +364,8 @@ textarea {
                   mode = "text/plain";
               if (tmp == "markdown")
                   mode = "text/x-markdown";
+              if (tmp == "sql")
+                  mode = "text/x-mysql";
               if (tmp == "python")
                   mode = "text/x-python";
               if (obj.get(0).CodeMirror) {
@@ -370,42 +406,55 @@ textarea {
 {{ footer() }}
 
 <div style="display: none;" id="questiontemplate">
-                <div class="question-group">
-                    <h3>Question</h3>
-                    <div class="form-group">
-                        <label for="question[]">Text (use HTML tags)</label>
-                        <textarea name="question[]" class="htmltext"></textarea>
+                <div class="question-group panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Question</h3>
                     </div>
-                    <div class="form-group">
-                        <label for="language[]">Syntax Highlight Language</label>
-                        <select name="language[]" class="language">
-                            <option selected value="java">Java</option>
-                            <option value="python">Python</option>
-                            <option value="text">Plain Text</option>
-                            <option value="multiplechoice">Multiple Choice</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="code[]">Code/Student Scaffolding (Syntax Highlighted)</label>
-                        <textarea name="code[]" class="codetext"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="answer[]">Answer (Syntax Highlighted)</label>
-                        <textarea name="answer[]" class="codetext"></textarea>
-                        <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="rubric[]">Rubric (Text Only)</label>
-                        <textarea name="rubric[]" class="textonly"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="autograder[]">JUnit Tests</label>
-                        <textarea name="autograder[]" class="codetext"></textarea>
-                        <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other include statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="score[]">Max Points</label>
-                        <input type="text" class="form-control" name="score[]" placeholder="">
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <label for="question[]">Text (use HTML tags)</label>
+                            <textarea name="question[]" class="htmltext"></textarea>
+                            <div class="form-help">Use <b>Shift+Enter</b> to enter a new line without a new paragraph.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="language[]">Question Type</label><br>
+                                    <select name="language[]" class="language">
+                                        <option selected value="java">Java</option>
+                                        <option value="python">Python</option>
+                                        <option value="markdown">Markdown</option>
+                                        <option value="sql">SQL</option>
+                                        <option value="text">Plain Text</option>
+                                        <option value="multiplechoice">Multiple Choice</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="score[]">Max Points</label>
+                                    <input type="text" class="form-control" name="score[]" placeholder="">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="code[]">Code/Student Scaffolding (Syntax Highlighted) or Multiple Choice Options</label>
+                            <textarea name="code[]" class="codetext"></textarea>
+                            <div class="form-help">If unit tests are to be performed, this <b>must</b> lead to a complete compile-ready java file, including any needed import statements and subclasses.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="answer[]">Answer (Syntax Highlighted)</label>
+                            <textarea name="answer[]" class="codetext"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="rubric[]">Rubric (Text Only)</label>
+                            <textarea name="rubric[]" class="textonly"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="autograder[]">JUnit Tests</label>
+                            <textarea name="autograder[]" class="codetext"></textarea>
+                            <div class="form-help">If unit tests are provided, these tests may be run on the student-submitted code.  Each test passed will be given equal weight into the student's grade.  This <b>must</b> be a complete compile-ready java file, including JUnit and other include statements.  You <b>should</b> use JUnit timeout annotations with the tests to ensure student code completes in a timely manner.</div>
+                        </div>
                     </div>
                 </div>
 </div>

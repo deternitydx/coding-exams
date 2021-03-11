@@ -77,10 +77,6 @@ input[type="radio"] {
                     <tr><td><b>Total</b></td><td style="text-align: right;">{{data.exam.score}}</td></tr>    
                     </table>
                 </div>
-                <div class="panel-footer text-center">
-                    <a href="?c=autograde_mc&e={{data.info.id}}&u={{data.exam.uva_id}}" class="btn btn-small btn-danger">Rerun Autograder</a>
-                </div>
-                    
             </div>
         </div>
     </div>
@@ -106,7 +102,9 @@ input[type="radio"] {
             {% if question.language == 'multiplechoice' %}
             <p><b>Correct Answer:</b> {{question.correct}}</p>
             {% endif %}
+            {% if data.exam.questions[qid].feedback %}
         <p><b>Grader Feedback:</b><br/> {{data.exam.questions[qid].feedback|nl2br}}</p>
+        {% endif %}
         {% if question.auto_grader %}
         <p><b>Autograder Feedback:</b></p><pre>{{data.exam.questions[qid].auto_grader}}</pre>
         {% endif %}

@@ -1,0 +1,36 @@
+.progress-bar-grayone {
+      background-color: #b0b0b0;
+      background-image: -webkit-linear-gradient(top,#b0b0b0 0,#a1a1a1 100%);
+      background-image: -o-linear-gradient(top,#b0b0b0 0,#a1a1a1 100%);
+      background-image: -webkit-gradient(linear,left top,left bottom,from(#b0b0b0),to(#a1a1a1));
+      background-image: linear-gradient(to bottom,#b0b0b0 0,#a1a1a1 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffb0b0b0', endColorstr='#ffa1a1a1', GradientType=0);
+      background-repeat: repeat-x;
+}
+.progress-bar-graytwo {
+      background-color: #a1a1a1;
+      background-image: -webkit-linear-gradient(top,#a1a1a1 0,#8f8f8f 100%);
+      background-image: -o-linear-gradient(top,#a1a1a1 0,#8f8f8f 100%);
+      background-image: -webkit-gradient(linear,left top,left bottom,from(#a1a1a1),to(#8f8f8f));
+      background-image: linear-gradient(to bottom,#a1a1a1 0,#8f8f8f 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffa1a1a1', endColorstr='#ff8f8f8f', GradientType=0);
+      background-repeat: repeat-x;
+}
+.progress-bar-graythree {
+      background-color: #707070;
+      background-image: -webkit-linear-gradient(top,#707070 0,#525252 100%);
+      background-image: -o-linear-gradient(top,#707070 0,#525252 100%);
+      background-image: -webkit-gradient(linear,left top,left bottom,from(#707070),to(#525252));
+      background-image: linear-gradient(to bottom,#707070 0,#525252 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff707070', endColorstr='#ff525252', GradientType=0);
+      background-repeat: repeat-x;
+}
+
+.progress-bar-success {
+    background-image: -webkit-linear-gradient(top,#7adbac 0,#50cf92 100%);
+    background-image: -o-linear-gradient(top,#7adbac 0,#50cf92 100%);
+    background-image: -webkit-gradient(linear,left top,left bottom,from(#7adbac),to(#50cf92));
+    background-image: linear-gradient(to bottom,#7adbac 0,#50cf92 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff7adbac', endColorstr='#ff50cf92', GradientType=0);
+    background-repeat: repeat-x;
+}
