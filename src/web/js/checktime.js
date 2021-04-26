@@ -19,13 +19,37 @@
                 } else if (timer_method == 'text-up') {
                     $('#timer').css('visibility', 'visible');
                     $('#timertext').css('font-size', 'inherit').css('color', '#9d9d9d');
+                } else if (timer_method == 'stoplight' || timer_method == 'hide-stoplight') {
+                    $('#timer').css('visibility', 'visible');
+                    $('#timer').addClass('progress');
+                    $('#timerbar').removeClass('progress-bar-info');
+                    $('#timerbar').addClass('progress-bar-success');
+                    $('#timerbar').css('visibility', 'visible');
+                } else if (timer_method == 'grayshades') {
+                    $('#timer').css('visibility', 'visible');
+                    $('#timer').addClass('progress');
+                    $('#timerbar').removeClass('progress-bar-info');
+                    $('#timerbar').addClass('progress-bar-grayone');
+                    $('#timerbar').css('visibility', 'visible');
+                } else if (timer_method == 'hide-grayshades-up' || timer_method == 'hide-grayshades-down') {
+                    $('#timer').css('visibility', 'visible');
+                    $('#timer').addClass('progress');
+                    $('#timerbar').removeClass('progress-bar-info');
+                    $('#timerbar').addClass('progress-bar-grayone');
+                    $('#timerbar').css('visibility', 'visible');
+                } else if (timer_method == 'green-down') {
+                    $('#timer').css('visibility', 'visible');
+                    $('#timer').addClass('progress');
+                    $('#timerbar').removeClass('progress-bar-info');
+                    $('#timerbar').addClass('progress-bar-greenone');
+                    $('#timerbar').css('visibility', 'visible');
                 } 
             }
 
-            if (timer_method == 'bar-down' || timer_method == 'text-down') {
+            if (timer_method == 'bar-down' || timer_method == 'text-down' || timer_method == "stoplight" || timer_method == "grayshades" || timer_method == "hide-stoplight" || timer_method == "hide-grayshades-down" || timer_method == "green-down") {
                     $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
                     $('#timertext').text(timeleft + " minutes remaining");
-            } else if (timer_method == 'bar-up' || timer_method == 'text-up') {
+            } else if (timer_method == 'bar-up' || timer_method == 'text-up' || timer_method == "hide-grayshades-up") {
                     $('#timerbar').css('width', (100-percleft)+'%').attr('aria-valuenow',(100-percleft));
                     $('#timertext').text("Elapsed time: " + timeelapsed + " mins");
             } else if (timer_method == 'ten-warn' && timeleft <= 10 && timeleft > 0 && !alerted) {
@@ -41,8 +65,10 @@
                 // that your edits are saved up until the final minute!
                 if (timeleft < 5 && timeleft > 0) {
                     autosave(); // if less than 5 minutes, save on every update!
-                    $('#timerbar').removeClass('progress-bar-info');
-                    $('#timerbar').addClass('progress-bar-danger');
+                    if (timer_method == 'bar-down' || timer_method == "bar-up") {
+                        $('#timerbar').removeClass('progress-bar-info');
+                        $('#timerbar').addClass('progress-bar-danger');
+                    }
                 }
 
                 if (timeleft <= 2 && timeleft > 0 && !enforced_alerted) {
@@ -54,6 +80,41 @@
                     // We are not going to prompt this time, just submit the page
                     window.onbeforeunload = function() {};
                     document.questionform.submit();
+                }
+            }
+
+            // Testing out new colors
+            if (timer_method == "stoplight" || timer_method == "hide-stoplight") {
+                if (percleft < 50 && percleft >= 10) {
+                    $('#timerbar').removeClass('progress-bar-success');
+                    $('#timerbar').addClass('progress-bar-warning');
+                } else if (percleft < 10) {
+                    $('#timerbar').removeClass('progress-bar-success');
+                    $('#timerbar').removeClass('progress-bar-warning');
+                    $('#timerbar').addClass('progress-bar-danger');
+                }
+            }
+            if (timer_method == "grayshades" || timer_method == "hide-grayshades-up" || timer_method == "hide-grayshades-down") {
+                if (percleft < 50 && percleft >= 10) {
+                    $('#timerbar').removeClass('progress-bar-grayone');
+                    $('#timerbar').addClass('progress-bar-graytwo');
+                } else if (percleft < 10) {
+                    $('#timerbar').removeClass('progress-bar-grayone');
+                    $('#timerbar').removeClass('progress-bar-graytwo');
+                    $('#timerbar').addClass('progress-bar-graythree');
+                    if (timer_method == "hide-grayshades-up") {
+                        $('#timertext').css('color', '#fcfcfc');
+                    }
+                }
+            }
+            if (timer_method == "green-down") {
+                if (percleft < 50 && percleft >= 10) {
+                    $('#timerbar').removeClass('progress-bar-greenone');
+                    $('#timerbar').addClass('progress-bar-greentwo');
+                } else if (percleft < 10) {
+                    $('#timerbar').removeClass('progress-bar-greenone');
+                    $('#timerbar').removeClass('progress-bar-greentwo');
+                    $('#timerbar').addClass('progress-bar-greenthree');
                 }
             }
         }
