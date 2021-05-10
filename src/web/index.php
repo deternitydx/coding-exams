@@ -52,6 +52,9 @@ switch ($command) {
     case "exam":
         echo $helper->showExam();
         break;
+    case "preview_exam":
+        echo $helper->previewExam();
+        break;
     case "save_exam":
         header("Content-type:application/json;charset=utf-8");
         echo $helper->handleSaveExam($input);

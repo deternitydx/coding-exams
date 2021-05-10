@@ -36,7 +36,7 @@
 <script src="js/codemirror/mode/markdown/markdown.js"></script>
 <script src="js/codemirror/mode/sql/sql.js"></script>
 <script src="js/clike.js"></script>
-<script src="js/checktime.js"></script>
+<script src="js/checktime.js?id=123"></script>
 
 <meta charset="utf-8"/>
 <style>
@@ -53,6 +53,12 @@ body {
 input[type="radio"] {
     margin-top: 0px;
 }
+
+pre {
+    background-color: #fdfdfd;
+    color: #000;
+}
+
 
 </style>
 </head>
@@ -82,12 +88,12 @@ input[type="radio"] {
                         <div id="timer" style="margin-top: 15px; margin-bottom: 15px; width: 400px; text-align: center; visibility: hidden;">
                             <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="visibility: hidden;"> 
                             </div>
-                            <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px;"></span>
+                            <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px; margin-top: 2px;"></span>
                         </div>
                     </li>
-                    {% if data.info.timer_method == 'hide-stoplight' %}
+                    {% if data.info.timer_method == 'hide-stoplight' or data.info.timer_method == 'hide-grayshades-up' or data.info.timer_method == 'hide-grayshades-down' or data.info.timer_method == 'text-down' or data.info.timer_method == 'green-down' %}
                     <li>
-                        <a id="toggletimer" href="#">Hide Timer</a>
+                        <a id="toggletimer" href="#">Hide/Show Timer</a>
                     </li>
                     {% endif %}
                     {% endif %}
@@ -284,7 +290,7 @@ input[type="radio"] {
         // End timer javascript
         {% endif %}
 
-        {% if data.info.timer_method == 'hide-stoplight' %}
+        {% if data.info.timer_method == 'hide-stoplight' or data.info.timer_method == 'hide-grayshades-up' or data.info.timer_method == 'hide-grayshades-down' or data.info.timer_method == 'text-down' or data.info.timer_method == 'green-down' %}
         $('#toggletimer').click(function() {
             var hidden = $('#timer_hidden').val();
 
@@ -293,13 +299,13 @@ input[type="radio"] {
                 $('#timer').css('visibility', 'hidden');
                 $('#timerbar').css('visibility', 'hidden');
                 $('#timertext').css('visibility', 'hidden');
-                $('#toggletimer').text("Show Timer");
+                $('#toggletimer').text("Hide/Show Timer");
             } else {
                 $('#timer_hidden').val("false");
                 $('#timer').css('visibility', 'visible');
                 $('#timerbar').css('visibility', 'visible');
                 $('#timertext').css('visibility', 'visible');
-                $('#toggletimer').text("Hide Timer");
+                $('#toggletimer').text("Hide/Show Timer");
             }
             return false;
         });
@@ -345,45 +351,79 @@ input[type="radio"] {
 
 {% if data.info.timer_method == 'choice' %}
     <div class="modal fade" id="timerchoice" tabindex="-1" role="dialog" data-backdrop='static' data-show='true'>
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog" style="width: 75%" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Choose a time-tracking system</h4>
                 </div>
                 <div class="modal-body">
                     <p>You have {{data.info.time.left}} minutes allowed for this exam.  Please choose one of the following options so that we can help you keep track of your time.  The time will be displayed at the top of your exam.</p>
-                    <div class="list-group" style="cursor: pointer;">
-                        <a class="list-group-item" onClick="return chooseTimer('bar-down');">Count-down Timer Bar
-                            <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
-                                <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
+                    <div class="row">
+                        <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
+                            <a class="list-group-item" onClick="return chooseTimer('hide-stoplight-down');">Count-down Bar (Green, Yellow, then Red)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-success" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
                                 </div>
-                                <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
-                            </div>
-                        </a>
-                        <a class="list-group-item" onClick="return chooseTimer('bar-up');">Count-up Timer Bar
-                            <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
-                                <div class="progress-bar progress-bar-info" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 25%"> 
+                            </a>
+                            <a class="list-group-item" onClick="return chooseTimer('hide-stoplight-up');">Count-up Bar (Green, Yellow, then Red)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-success" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 25%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
                                 </div>
-                                <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
-                            </div>
-                        </a>
-                        <a class="list-group-item" onClick="return chooseTimer('text-down');">Count-down Timer
-                            <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
-                                <span style="color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
-                            </p>
-                        </a>
-                        <a class="list-group-item" onClick="return chooseTimer('text-up');">Count-up Timer
-                            <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
-                                <span style="color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
+                            </a>
+                            <a class="list-group-item" onClick="return chooseTimer('text-down');">Count-down Text 
+                                <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <span style="color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                                </p>
+                            </a>
+                        </div>
+                        <div class="col-md-4" style="cursor: pointer; padding-left: 0px; padding-right: 0px;">
+                            <a class="list-group-item" onClick="return chooseTimer('green-down');">Count-down Bar (Green only)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-greenone" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                                </div>
+                            </a>
+                            <a class="list-group-item" onClick="return chooseTimer('green-up');">Count-up Bar (Green only)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-greenone" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 25%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
+                                </div>
+                            </a>
+                            <a class="list-group-item" onClick="return chooseTimer('text-up');">Count-up Text
+                                <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <span style="color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
 
-                            </p>
-                        </a>
-                        <a class="list-group-item" onClick="return chooseTimer('ten-warn');">10 minute warning pop-up (no time displayed)
-                            <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
-                                <span style="color:#333; line-height:2em; font-size: 12px;">There are less than 10 minutes left for this exam.</span>
+                                </p>
+                            </a>
+                        </div>
+                        <div class="col-md-4" style="cursor: pointer; padding-left: 0px;">
+                            <a class="list-group-item" onClick="return chooseTimer('hide-grayshades-down');">Count-down Bar (Gray only)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-grayone" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                                </div>
+                            </a>
+                            <a class="list-group-item" onClick="return chooseTimer('hide-grayshades-up');">Count-up Bar (Gray only)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-grayone" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 25%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;">Elapsed time: <i>x</i> minutes</span>
+                                </div>
+                            </a>
+                            <a class="list-group-item" onClick="return chooseTimer('ten-warn');">10 minute warning pop-up (no time displayed)
+                                <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <span style="color:#333; line-height:2em; font-size: 12px;">&nbsp;</span>
 
-                            </p>
-                        </a>
+                                </p>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <!--<div class="modal-footer">

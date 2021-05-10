@@ -1237,7 +1237,7 @@ class Helper {
             // If there is an ongoing research study, make the choice 
             // study if this is the first ime the exam was opened
             if ($exam["info"]["timer_method"] == "study") {
-                $studyOptions = ["stoplight", "hide-stoplight", "hide-stoplight"];
+                $studyOptions = ["green-down", "text-down"];
                 $studyKey = array_rand($studyOptions, 1);
                 $exam["info"]["timer_method"] = $studyOptions[$studyKey];
                 $resStudy = $this->db->query("update person_exam set timer_method = $3 where person_id = $1 and exam_id = $2;",

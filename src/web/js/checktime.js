@@ -19,7 +19,7 @@
                 } else if (timer_method == 'text-up') {
                     $('#timer').css('visibility', 'visible');
                     $('#timertext').css('font-size', 'inherit').css('color', '#9d9d9d');
-                } else if (timer_method == 'stoplight' || timer_method == 'hide-stoplight') {
+                } else if (timer_method == 'stoplight' || timer_method == 'hide-stoplight' || timer_method == "hide-stoplight-up" || timer_method == "hide-stoplight-down") {
                     $('#timer').css('visibility', 'visible');
                     $('#timer').addClass('progress');
                     $('#timerbar').removeClass('progress-bar-info');
@@ -37,7 +37,7 @@
                     $('#timerbar').removeClass('progress-bar-info');
                     $('#timerbar').addClass('progress-bar-grayone');
                     $('#timerbar').css('visibility', 'visible');
-                } else if (timer_method == 'green-down') {
+                } else if (timer_method == 'green-down' || timer_method == "green-up") {
                     $('#timer').css('visibility', 'visible');
                     $('#timer').addClass('progress');
                     $('#timerbar').removeClass('progress-bar-info');
@@ -46,10 +46,10 @@
                 } 
             }
 
-            if (timer_method == 'bar-down' || timer_method == 'text-down' || timer_method == "stoplight" || timer_method == "grayshades" || timer_method == "hide-stoplight" || timer_method == "hide-grayshades-down" || timer_method == "green-down") {
+            if (timer_method == 'bar-down' || timer_method == 'text-down' || timer_method == "stoplight" || timer_method == "grayshades" || timer_method == "hide-stoplight" || timer_method == "hide-grayshades-down" || timer_method == "green-down" || timer_method == "hide-stoplight-down") {
                     $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
                     $('#timertext').text(timeleft + " minutes remaining");
-            } else if (timer_method == 'bar-up' || timer_method == 'text-up' || timer_method == "hide-grayshades-up") {
+            } else if (timer_method == 'bar-up' || timer_method == 'text-up' || timer_method == "hide-grayshades-up" || timer_method == "green-up" || timer_method == "hide-stoplight-up") {
                     $('#timerbar').css('width', (100-percleft)+'%').attr('aria-valuenow',(100-percleft));
                     $('#timertext').text("Elapsed time: " + timeelapsed + " mins");
             } else if (timer_method == 'ten-warn' && timeleft <= 10 && timeleft > 0 && !alerted) {
@@ -84,7 +84,7 @@
             }
 
             // Testing out new colors
-            if (timer_method == "stoplight" || timer_method == "hide-stoplight") {
+            if (timer_method == "stoplight" || timer_method == "hide-stoplight" || timer_method == "hide-stoplight-up" || timer_method == "hide-stoplight-down") {
                 if (percleft < 50 && percleft >= 10) {
                     $('#timerbar').removeClass('progress-bar-success');
                     $('#timerbar').addClass('progress-bar-warning');
@@ -92,6 +92,9 @@
                     $('#timerbar').removeClass('progress-bar-success');
                     $('#timerbar').removeClass('progress-bar-warning');
                     $('#timerbar').addClass('progress-bar-danger');
+                    if (timer_method == "hide-stoplight-up") {
+                        $('#timertext').css('color', '#fcfcfc');
+                    }
                 }
             }
             if (timer_method == "grayshades" || timer_method == "hide-grayshades-up" || timer_method == "hide-grayshades-down") {
@@ -107,7 +110,7 @@
                     }
                 }
             }
-            if (timer_method == "green-down") {
+            if (timer_method == "green-down" || timer_method == "green-up") {
                 if (percleft < 50 && percleft >= 10) {
                     $('#timerbar').removeClass('progress-bar-greenone');
                     $('#timerbar').addClass('progress-bar-greentwo');
@@ -115,6 +118,9 @@
                     $('#timerbar').removeClass('progress-bar-greenone');
                     $('#timerbar').removeClass('progress-bar-greentwo');
                     $('#timerbar').addClass('progress-bar-greenthree');
+                    if (timer_method == "green-up") {
+                        $('#timertext').css('color', '#fcfcfc');
+                    }
                 }
             }
         }
