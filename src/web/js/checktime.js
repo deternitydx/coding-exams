@@ -43,7 +43,9 @@
                     $('#timerbar').removeClass('progress-bar-info');
                     $('#timerbar').addClass('progress-bar-greenone');
                     $('#timerbar').css('visibility', 'visible');
-                } 
+                } else if (timer_method == 'ten-warn') {
+                    $('#toggletimer').css('visibility', 'hidden'); 
+                }
             }
 
             if (timer_method == 'bar-down' || timer_method == 'text-down' || timer_method == "stoplight" || timer_method == "grayshades" || timer_method == "hide-stoplight" || timer_method == "hide-grayshades-down" || timer_method == "green-down" || timer_method == "hide-stoplight-down") {

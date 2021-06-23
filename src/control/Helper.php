@@ -2176,6 +2176,44 @@ class Helper {
                 // remove the zip from the local filesystem
                 unlink($zipname);
                 return $zipfile;
+            } else if ($this->input["format"] == "jplag-zip") {
+                $zip = new \ZipArchive();
+                // make the zip file unique
+                $zipname = Config::$TEMP_DIR . "/". $info["id"] . "_" . time() . ".zip";
+                $zip->open($zipname, \ZipArchive::CREATE);
+                foreach ($results["exams"] as $exam) {
+                    // only download student grades
+                    if ($exam["role"] !== "Student")
+                        continue;
+
+                    //$uzdir = "$zdir/{$exam["name"]}({$exam["uva_id"]})";
+                    $zip->addEmptyDir("{$exam["uva_id"]}");
+
+                    $response = "";
+                    $comments = "";
+                    $i = 1;
+                    $score = 0;
+                    $body = "";
+                    foreach ($info["questions"] as $q) {
+                        if ($i > 2) 
+                            break;
+                        if (isset($exam["questions"][$q["id"]]) && isset($exam["questions"][$q["id"]]["response"]))
+                            $zip->addFromString("{$exam["uva_id"]}/$i.java", $exam["questions"][$q["id"]]["response"]);
+                        $i++;
+                    }
+                }
+                // close zip for downloading
+                $zip->close();
+
+                // show ZIP file
+                header('Content-Type: application/zip');
+                header('Content-disposition: attachment; filename=exam_submissions_jplag.zip');
+                header('Content-Length: ' . filesize($zipname));
+                $zipfile = file_get_contents($zipname); 
+
+                // remove the zip from the local filesystem
+                unlink($zipname);
+                return $zipfile;
             }
         }
 

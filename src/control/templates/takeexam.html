@@ -91,11 +91,9 @@ pre {
                             <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px; margin-top: 2px;"></span>
                         </div>
                     </li>
-                    {% if data.info.timer_method == 'hide-stoplight' or data.info.timer_method == 'hide-grayshades-up' or data.info.timer_method == 'hide-grayshades-down' or data.info.timer_method == 'text-down' or data.info.timer_method == 'green-down' %}
                     <li>
                         <a id="toggletimer" href="#">Hide/Show Timer</a>
                     </li>
-                    {% endif %}
                     {% endif %}
                     <li><a href="#"><i class="fa fa-user-circle" aria-hidden="true"></i> {{user.name}}</a></li>
                 </ul>
@@ -290,7 +288,7 @@ pre {
         // End timer javascript
         {% endif %}
 
-        {% if data.info.timer_method == 'hide-stoplight' or data.info.timer_method == 'hide-grayshades-up' or data.info.timer_method == 'hide-grayshades-down' or data.info.timer_method == 'text-down' or data.info.timer_method == 'green-down' %}
+        {% if data.info.timer_method != 'ten-warn' %}
         $('#toggletimer').click(function() {
             var hidden = $('#timer_hidden').val();
 

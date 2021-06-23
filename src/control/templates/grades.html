@@ -28,6 +28,8 @@
 <script src="js/codemirror/addon/hint/show-hint.js"></script>
 <script src="js/clike.js"></script>
 
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
 <meta charset="utf-8"/>
 <style>
 .CodeMirror {
@@ -59,6 +61,20 @@ textarea {
     padding-top: 5px;
         padding-bottom: 5px;
 }
+
+.bar rect {
+    shape-rendering: crispEdges;
+}
+
+.bar text {
+    fill: #999999;
+}
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
 </style>
 </head>
 
@@ -68,8 +84,24 @@ textarea {
 
 <div class="container" role="main">
     <h1>{{data.info.title}}: Full Report</h1>
-    <p>View student exams</p>
 
+    <div class="row">
+        <div class="col-md-9">
+            <div id="histogram" class="text-center"></div>
+        </div>
+        <div class="col-md-3">
+                    <table class="table table-bordered">
+                        <caption class="text-center">Statistics</caption>
+                        <tbody>
+                            <tr><th scope="row">Maximum</th><td id="stat-max"></td></tr>
+                            <tr><th scope="row">Minimum</th><td id="stat-min"></td></tr>
+                            <tr><th scope="row">Median</th><td id="stat-median"></td></tr>
+                            <tr><th scope="row">Mean</th><td id="stat-mean"></td></tr>
+                            <tr><th scope="row">Std. Dev.</th><td id="stat-std"></td></tr>
+                        </tbody>
+                    </table>
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-12">
             <table id="table1" class="display">
@@ -107,6 +139,85 @@ textarea {
             $('#table1').DataTable({
               "pageLength": 100
             });
+
+
+            var color = "steelblue";
+
+            // Generate a 1000 data points using normal distribution with mean=20, deviation=5
+            var values = []; 
+            {% for grade in data.grades %}
+                values.push({{grade.score}});
+            {% endfor %}
+
+           d3.select("#stat-max").text(d3.max(values));
+           d3.select("#stat-min").text(d3.min(values));
+           d3.select("#stat-mean").text(d3.mean(values));
+           d3.select("#stat-median").text(d3.median(values));
+           d3.select("#stat-std").text(d3.deviation(values));
+
+            // A formatter for counts.
+                var formatCount = d3.format(",.0f");
+
+            var margin = {top: 20, right: 30, bottom: 30, left: 30},
+                    width = 760 - margin.left - margin.right,
+                    height = 250 - margin.top - margin.bottom;
+
+            var max = d3.max(values); 
+            var min = d3.min(values); 
+                var x = d3.scale.linear()
+            .domain([min, max])
+                .range([0, width]);
+
+                // Generate a histogram using twenty uniformly-spaced bins.
+                    var data = d3.layout.histogram()
+            .bins(x.ticks(20))
+                (values);
+
+                var yMax = d3.max(data, function(d){return d.length});
+                var yMin = d3.min(data, function(d){return d.length});
+                var colorScale = d3.scale.linear()
+            .domain([yMin, yMax])
+                .range([d3.rgb(color).brighter(), d3.rgb(color).darker()]);
+
+                var y = d3.scale.linear()
+            .domain([0, yMax])
+                .range([height, 0]);
+
+                var xAxis = d3.svg.axis()
+            .scale(x)
+                .orient("bottom");
+
+                var svg = d3.select("#histogram").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                var bar = svg.selectAll(".bar")
+            .data(data)
+                .enter().append("g")
+                .attr("class", "bar")
+                .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+
+                bar.append("rect")
+                .attr("x", 1)
+                .attr("width", (x(data[0].dx) - x(0)) - 1)
+                .attr("height", function(d) { return height - y(d.y); })
+                .attr("fill", function(d) { return colorScale(d.y) });
+
+                bar.append("text")
+                .attr("dy", ".75em")
+                .attr("y", -12)
+                .attr("x", (x(data[0].dx) - x(0)) / 2)
+                .attr("text-anchor", "middle")
+                .text(function(d) { return formatCount(d.y); });
+
+                svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis);
+        
+        
         } );
     </script>
 
