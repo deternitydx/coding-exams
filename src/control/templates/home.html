@@ -112,16 +112,18 @@ body {
                                     {% endif %}
                                     </td>
                                     {% if cdata.role == "Instructor" or cdata.role== "Secondary Instructor" or cdata.role == "Teaching Assistant" %}
-                                        <td><a href="?c=grade&e={{exam.id}}" class="btn btn-xs btn-success">Grade Exam</a></td>
+                                        <td><a href="?c=grade&e={{exam.id}}" class="btn btn-xs btn-success">Grade</a></td>
                                     {% endif %}
                                     {% if cdata.role == "Instructor"%}
-                                        <td><a href="?c=report&e={{exam.id}}" class="btn btn-xs btn-warning">Report</a></td>
-                                        <td><a href="?c=full_report&e={{exam.id}}" class="btn btn-xs btn-warning">Exam Results</a></td>
                                         <td><div class="btn-group">
                                             <button type="button" class="btn btn-xs btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                Download Scores <span class="caret"></span>
+                                                Reports <span class="caret"></span>
                                             </button>
                                             <ul class="dropdown-menu">
+                                                <li><a href="?c=full_report&e={{exam.id}}">Full Results</a></li>
+                                                <li><a href="?c=report&e={{exam.id}}">Missing / Timing Reports</a></li>
+                                                <li role="separator" class="divider"></li>
+                                                <li class="dropdown-header">Downloads</li>
                                                 <li><a href="?c=download&e={{exam.id}}">Collab Assignments Package</a></li>
                                                 <li><a href="?c=download&e={{exam.id}}&format=text-zip">Text-File Submissions Zip</a></li>
                                                 <li><a href="?c=download&e={{exam.id}}&format=csv-summary">CSV Summary</a></li>
@@ -135,7 +137,8 @@ body {
                                             <a href="?c=close_exam&e={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-danger">Close Submissions</a> 
                                         {% endif %}
                                         </td>
-                                        <td><a href="?c=new_exam&exam={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-info">Edit Exam</a></td>
+                                        <td><div class="btn-group"><a href="?c=preview_exam&exam={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-primary">Preview</a>
+                                                <a href="?c=new_exam&exam={{exam.id}}&course={{cdata.id}}" class="btn btn-xs btn-info">Edit</a></div></td>
                                     {% endif %}
                                 </tr>
                                 {% endfor %}

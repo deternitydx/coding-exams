@@ -345,7 +345,7 @@ class Helper {
         $allowed = false;
         foreach ($data as $y) {
             foreach ($y as $c) {
-                if ($c["id"] == $cid && $c["role"] == "Instructor") {
+                if ($c["id"] == $cid && ($c["role"] == "Instructor" || $c["role"] == "Secondary Instructor" || $c["role"] == "Teaching Assistant")) {
                     $allowed = true;
                     $course = $c;
                 }
@@ -1510,6 +1510,7 @@ class Helper {
                 "feedback" => $row["feedback"],
                 "score" => $row["score"],
                 "grader" => $row["grader"],
+                "graded" => $row["graded"] === 't' ? true : false,
                 "grade_time" => $row["grade_time"],
                 "auto_grader" => $row["auto_grader"],
                 "flagged" => $row["flagged"] === 't' ? true : false
@@ -1526,18 +1527,22 @@ class Helper {
             ];
         }
 
+        $overall_total = 0;
+        $overall_graded = 0;
         foreach ($examInfo["questions"] as &$qinfo) {
             $total = 0;
             $graded = 0;
             if (isset($questions[$qinfo["id"]]["answers"])) { 
                 foreach ($questions[$qinfo["id"]]["answers"] as $row) {
-                    if ($row["grade_time"] != "")
+                    if ($row["grade_time"] != "" || $row["graded"])
                         $graded++;
                     $total++;
                 }
                 $qinfo["total"] = $total;
                 $qinfo["graded"] = $graded;
                 $qinfo["percent"] = round(100*($graded/$total),0,PHP_ROUND_HALF_DOWN);
+                $overall_total += $total;
+                $overall_graded += $graded;
             } else {
                 $qinfo["total"] = 0;
                 $qinfo["graded"] = 0;
@@ -1546,6 +1551,12 @@ class Helper {
         }
         // do not use qinfo again in this method, or call unset below first
         //unset($qinfo);
+
+        $examInfo["grading_progress"] = [
+            "total" => $overall_total,
+            "graded" => $overall_graded,
+            "percent" => round(100*($overall_graded/$overall_total),0,PHP_ROUND_HALF_DOWN)
+        ];
 
         $recents = [];
         $res = null;

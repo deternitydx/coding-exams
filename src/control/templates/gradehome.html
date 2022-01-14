@@ -83,6 +83,13 @@ textarea {
     <div class="row">
         <div class="col-md-12">
             <div class="well well-lg">
+            <p>Grading Progress</p> 
+            <div class="progress" style="border: 1px solid #777; height: 1.6em">
+                <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="{{data.info.grading_progress.percent}}" aria-valuemin="0" aria-valuemax="100" style="width: {{data.info.grading_progress.percent}}%;">
+                    {{data.info.grading_progress.percent}}%
+                </div>
+            </div>
+            {% if data.info.questions|length < 5 %}
             {% set i = 1 %}
             {% for question in data.info.questions %}
             <p>Question {{i}}</p> 
@@ -93,6 +100,7 @@ textarea {
             </div>
             {% set i = i + 1 %}
             {% endfor %}
+            {% endif %}
             <p style="text-align: right"> <a href="?c=grade_stats&e={{data.info.id}}" class="btn btn-sm btn-info"><i class="fa fa-pie-chart" aria-hidden="true"></i></a></p>
             </div>
         </div>

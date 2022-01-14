@@ -57,7 +57,21 @@ textarea {
 .container {
     width: 90%!important;
 }
+
+
+.rubricitem:hover {
+    color: darkred;
+    cursor: pointer;
+}
 </style>
+    <script>
+        $(document).ready(function() {
+            $(".rubricitem").click(function() {
+                var curval = $("#comments").val();
+                $("#comments").val(curval + $(this).closest(".rubricitem").text());
+            });
+        });
+    </script>
 </head>
 
 <body role="document">
@@ -109,7 +123,14 @@ textarea {
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Rubric</label>
-                            <pre>{{data.rubric}}</pre>
+
+                            <div class="well well-sm">
+                                {% set ritems = data.rubric|split("\n") %}
+                                {% for rit in ritems %}
+                                <span id="ritem{{loop.index}}" class="rubricitem">{{rit|replace({'   ':"&nbsp;&nbsp;&nbsp;"})|raw}}</span><br>
+                                {% endfor %}
+                                <!--{{data.rubric}}-->
+                            </div>
                         </div>
                         {% if data.auto_grader %}
                         <div class="form-group">
@@ -122,7 +143,7 @@ textarea {
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Grader Comments</label>
-                            <textarea name="comments" style="height: 250px">{{data.feedback}}</textarea>
+                            <textarea id="comments" name="comments" style="height: 250px">{{data.feedback}}</textarea>
                         </div>
                         <div class="form-group">
                             <label>Final Score</label>

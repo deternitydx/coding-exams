@@ -103,7 +103,7 @@ pre {
     <h1>{{data.title}}: Exam Preview</h1>
 
     {% if data.instructions %}
-    <div class="well well-lg">{{data.instructions|raw}}</div>
+    <div style="border-bottom: 1px solid #444; margin-bottom: 40px;">{{data.instructions|raw}}</div>
     {% endif %}
 
     <form id="questionform" name="questionform" method="post" action="?c=submit_exam">
@@ -116,7 +116,9 @@ pre {
             
             <div>{{question.text|raw}}</div>
             <input type="hidden" name="q[{{i}}]" value="{{question.id}}">
-            {% if question.language == 'multiplechoice' %}
+            {% if question.language == 'noanswer' %}
+            <div style="margin-bottom: 60px;"></div>
+            {% elseif question.language == 'multiplechoice' %}
             <div style="margin-left:10px; margin-right: auto; width: 100%; margin-top:20px; margin-bottom:40px;">
                 {% for key, option in question.options %}
                 <div class="radio">

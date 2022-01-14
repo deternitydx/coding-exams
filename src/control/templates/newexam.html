@@ -177,6 +177,7 @@ input[type="radio"] {
                                         <option {{ (question.language == 'sql') ? "selected" : ""}} value="sql">SQL</option>
                                         <option {{ (question.language == 'text') ? "selected" : ""}} value="text">Plain Text</option>
                                         <option {{ (question.language == 'multiplechoice') ? "selected" : ""}} value="multiplechoice">Multiple Choice</option>
+                                        <option {{ (question.language == 'noanswer') ? "selected" : ""}} value="noanswer">Display Only</option>
                                     </select>
                                 </div>
                             </div>
@@ -230,6 +231,7 @@ input[type="radio"] {
                                         <option value="sql">SQL</option>
                                         <option value="text">Plain Text</option>
                                         <option value="multiplechoice">Multiple Choice</option>
+                                        <option value="noanswer">Display Only</option>
                                     </select>
                                 </div>
                             </div>
