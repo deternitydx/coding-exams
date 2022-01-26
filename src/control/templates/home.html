@@ -106,7 +106,7 @@ body {
                                 <tr>
                                     <td>{{ exam.title}}</td>
                                     <td>
-                                    {% if exam.closed %}
+                                    {% if not exam.available %}
                                         <span class="btn btn-xs btn-primary disabled">Assessment Closed</span> 
                                     {% elseif exam.date_taken == "" %}
                                         <a href="?c=exam&e={{exam.id}}" class="btn btn-xs btn-primary">Take Assessment</a> 

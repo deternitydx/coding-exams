@@ -107,13 +107,53 @@ input[type="radio"] {
                     <label for="instructions">Instructions</label>
                     <textarea name="instructions" class="htmltext">{{data.examdata.info.instructions}}</textarea>
                 </div>
-                <div class="form-group">
-                    <label for="timeallowed">Time Allowed</label>
-                    <input type="text" class="form-control" id="timeallowed" name="timeallowed" placeholder="Time Allowed (mins)" value="{{data.examdata.info.time_allowed}}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="opendate">Open Date</label>
+                            <input type="date" class="form-control" id="opendate" name="opendate" value="{{data.examdata.info.open ? data.examdata.info.open|date("Y-m-d") : ""}}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="opentime">Open Time</label>
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="opentime" name="opentime" value="{{data.examdata.info.open ? data.examdata.info.open|date("H:i") : ""}}">
+                                <span class="input-group-addon">EST</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="timeenforced">Enforce Time</label>
-                    <input type="checkbox" data-toggle="toggle" data-on="Enforced" data-off="Not Enforced"  data-onstyle="success" name="timeenforced" value="t" {{data.examdata.info.time_enforced == 't' ? 'checked'}}>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="closedate">Close Date</label>
+                            <input type="date" class="form-control" id="closedate" name="closedate" value="{{data.examdata.info.close ? data.examdata.info.close|date("Y-m-d") : ""}}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="closetime">Close Time</label>
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="closetime" name="closetime" value="{{data.examdata.info.close ? data.examdata.info.close|date("H:i") : ""}}">
+                                <span class="input-group-addon">EST</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="timeallowed">Time Allowed</label>
+                            <input type="number" class="form-control" id="timeallowed" name="timeallowed" placeholder="Time Allowed (mins)" value="{{data.examdata.info.time_allowed}}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="timeenforced">Enforce Time</label><br>
+                            <input type="checkbox" data-toggle="toggle" data-on="Enforced" data-off="Not Enforced"  data-onstyle="success" name="timeenforced" value="t" {{data.examdata.info.time_enforced == 't' ? 'checked'}}>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="timermethod">Timer Method</label>

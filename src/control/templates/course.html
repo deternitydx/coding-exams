@@ -84,7 +84,7 @@ h4 {
             <div class="panel panel-default">
                 <div class="panel-heading" role="tab" id="heading{{i}}">
                     <div class="btn-group pull-right">
-                        {% if exam.closed %}
+                        {% if not exam.available %}
                             <span class="btn btn-primary disabled">Closed</span> 
                         {% elseif exam.date_taken == "" %}
                             <a href="?c=exam&e={{exam.id}}" class="btn btn-primary takeexam" target="_blank">Begin</a> 
@@ -96,7 +96,7 @@ h4 {
                         {{exam.title}}
                     </h4>
                 </div>
-                {% if exam.time_allowed and exam.date_taken == "" and not exam.closed %}
+                {% if exam.time_allowed and exam.date_taken == "" and exam.available %}
                 <div id="collapse{{i}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{i}}">
                     <div class="panel-body">
                         <b>Please note: </b>You are allowed to take 

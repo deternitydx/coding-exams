@@ -405,25 +405,49 @@ class Helper {
             $timermethod = $this->input["timermethod"];
         }
 
+        // convert open/close time
+        $open = null;
+        $close = null;
+        if (isset($this->input["opentime"]) && !empty($this->input["opentime"]) &&
+            isset($this->input["opendate"]) && !empty($this->input["opendate"])) {
+
+            $open = strtotime($this->input["opendate"] . " " .
+                $this->input["opentime"]);
+
+        }        
+        if (isset($this->input["closetime"]) && !empty($this->input["closetime"]) &&
+            isset($this->input["closedate"]) && !empty($this->input["closedate"])) {
+
+            $close = strtotime($this->input["closedate"] . " " .
+                $this->input["closetime"]);
+
+        }        
+        // make sure to add the time check to taking the exam, too, but NOT saving exam
+
+
         // create the exam
         if (!isset($this->input["exam"]) || empty($this->input["exam"])) {
-            $res = $this->db->query("insert into exam (course_id, title, instructions, time_allowed, time_enforced, timer_method) values ($1, $2, $3, $4, $5, $6) returning id;", array(
+            $res = $this->db->query("insert into exam (course_id, title, instructions, time_allowed, time_enforced, timer_method, open, close) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id;", array(
                 $course["id"],
                 $this->input["name"],
                 $this->input["instructions"],
                 $timeallowed,
                 $timeenforced,
-                $timermethod
+                $timermethod,
+                $open,
+                $close
             ));
         } else {
-            $res = $this->db->query("update exam set (title, instructions, time_allowed, time_enforced, timer_method) = ($3, $4, $5, $6, $7) where course_id = $1 and id = $2 returning id;", array(
+            $res = $this->db->query("update exam set (title, instructions, time_allowed, time_enforced, timer_method, open, close) = ($3, $4, $5, $6, $7, $8, $9) where course_id = $1 and id = $2 returning id;", array(
                 $course["id"],
                 $this->input["exam"],
                 $this->input["name"],
                 $this->input["instructions"],
                 $timeallowed,
                 $timeenforced,
-                $timermethod
+                $timermethod,
+                $open,
+                $close
             ));
         }
         $tmp = $this->db->fetchAll($res);
@@ -1178,7 +1202,13 @@ class Helper {
         $allowed = false;
         foreach ($all as $row) {
             if ($row["id"] == $eid && $row["closed"] != 't') {
-                $allowed = true;
+                // allow opening only if no time set or if it's between open/close timem
+                if (($row["open"] == "" && $row["close"] == "") ||
+                    ($row["open"] == null && $row["close"] == null) ||
+                    ($row["open"] != "" && $row["open"] != null && $row["close"] != "" && $row["close"] != null
+                        && $row["open"] <= time() && $row["close"] >= time())) {
+                    $allowed = true; 
+                }
                 $exam["info"] = $row;
                 // scale up the time based on the scale in the person_course link
                 if ($exam["info"]["time_allowed"] != null) {
@@ -1196,7 +1226,7 @@ class Helper {
         }
 
         if (!$allowed)
-            die($this->showError("You may not take this exam at this time"));
+            die($this->showError("You may not take this assessment at this time"));
 
         // Check to ensure the student hasn't submitted already
         $res = $this->db->query("select e.exam_id, e.date_taken, e.date_started, e.timer_method from person_exam e where e.exam_id = $1 and e.person_id = $2;", [$eid, $this->user["id"]]);
@@ -1231,7 +1261,7 @@ class Helper {
             }
 
             if ($info["date_taken"] != null)
-                die($this->showError("You may not retake the same exam twice."));
+                die($this->showError("You may not retake the same assessmment twice."));
         } else {
             // RESEARCH STUDY
             // If there is an ongoing research study, make the choice 
@@ -1375,8 +1405,16 @@ class Helper {
                 "open" => $row["open"],
                 "close" => $row["close"],
                 "time_allowed" => $row["time_allowed"] ? (int) ($row["time_allowed"] * $row["time_scale"]) : $row["time_allowed"],
-                "closed" => $row["closed"] == 't' ? true : false
+                "closed" => $row["closed"] == 't' ? true : false,
+                "available" => false
             ];
+
+            if ($row["closed"] != 't' && (($row["open"] == "" && $row["close"] == "") ||
+                ($row["open"] == null && $row["close"] == null) ||
+                ($row["open"] != "" && $row["open"] != null && $row["close"] != "" && $row["close"] != null
+                    && $row["open"] <= time() && $row["close"] >= time()))) {
+                $exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]]["exams"][$row["id"]]["available"] = true;  
+            }
 
             $res2 = $this->db->query("select * from person_exam where exam_id = $1 and person_id = $2;", [$row["id"], $this->user["id"]]);
             $all2 = $this->db->fetchAll($res2);
