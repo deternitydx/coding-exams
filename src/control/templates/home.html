@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Exam Software Home</title>
+    <title>Assessment Software Home</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -87,7 +87,7 @@ body {
                                     Add Participant</a>&nbsp;
                                 <a href="?c=new_exam&course={{cdata.id}}" class='btn btn-sm btn-success'>
                                     <i class="fa fa-plus" aria-hidden="true"></i>
-                                    Create New Exam</a>
+                                    Create New Assessment</a>
                                 {% endif %}
                             </div>
                             <h4 class="panel-title">
@@ -104,9 +104,9 @@ body {
                                     <td>{{ exam.title}}</td>
                                     <td>
                                     {% if exam.closed %}
-                                        <span class="btn btn-xs btn-primary disabled">Exam Closed</span> 
+                                        <span class="btn btn-xs btn-primary disabled">Assessment Closed</span> 
                                     {% elseif exam.date_taken == "" %}
-                                        <a href="?c=exam&e={{exam.id}}" class="btn btn-xs btn-primary">Take Exam</a> 
+                                        <a href="?c=exam&e={{exam.id}}" class="btn btn-xs btn-primary">Take Assessment</a> 
                                     {% else %}
                                         <span class="btn btn-xs btn-primary disabled">Already Taken</span> 
                                     {% endif %}

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Exam Preview</title>
+    <title>Assessment Preview</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -100,7 +100,7 @@ pre {
 </nav>
 
 <div class="container" role="main">
-    <h1>{{data.title}}: Exam Preview</h1>
+    <h1>{{data.title}}: Preview</h1>
 
     {% if data.instructions %}
     <div style="border-bottom: 1px solid #444; margin-bottom: 40px;">{{data.instructions|raw}}</div>
@@ -230,7 +230,7 @@ pre {
                     <h4 class="modal-title">Choose a time-tracking system</h4>
                 </div>
                 <div class="modal-body">
-                    <p>You have {{data.info.time.left}} minutes allowed for this exam.  Please choose one of the following options so that we can help you keep track of your time.  The time will be displayed at the top of your exam.</p>
+                    <p>You have {{data.info.time.left}} minutes allowed for this assessment.  Please choose one of the following options so that we can help you keep track of your time.  The time will be displayed at the top of your window.</p>
                     <div class="list-group" style="cursor: pointer;">
                         <a class="list-group-item" onClick="return chooseTimer('bar-down');">Count-down Timer Bar
                             <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
@@ -259,7 +259,7 @@ pre {
                         </a>
                         <a class="list-group-item" onClick="return chooseTimer('ten-warn');">10 minute warning pop-up (no time displayed)
                             <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 400px; text-align: center;">
-                                <span style="color:#333; line-height:2em; font-size: 12px;">There are less than 10 minutes left for this exam.</span>
+                                <span style="color:#333; line-height:2em; font-size: 12px;">There are less than 10 minutes left.</span>
 
                             </p>
                         </a>

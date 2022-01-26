@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Exam Software Home</title>
+    <title>Assessment Software Home</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -85,9 +85,9 @@ h4 {
                 <div class="panel-heading" role="tab" id="heading{{i}}">
                     <div class="btn-group pull-right">
                         {% if exam.closed %}
-                            <span class="btn btn-primary disabled">Exam Closed</span> 
+                            <span class="btn btn-primary disabled">Closed</span> 
                         {% elseif exam.date_taken == "" %}
-                            <a href="?c=exam&e={{exam.id}}" class="btn btn-primary takeexam" target="_blank">Take Exam</a> 
+                            <a href="?c=exam&e={{exam.id}}" class="btn btn-primary takeexam" target="_blank">Begin</a> 
                         {% else %}
                             <span class="btn btn-primary disabled">Already Taken</span> 
                         {% endif %}
@@ -101,7 +101,7 @@ h4 {
                     <div class="panel-body">
                         <b>Please note: </b>You are allowed to take 
                         {{ exam.time_allowed }} minutes
-                        on this exam.  The timer starts as soon as you click "Take Exam" above.
+                        on this assessment.  The timer starts as soon as you click "Begin" above.
                     </div>
                 </div>
                 {% endif %}
@@ -111,7 +111,7 @@ h4 {
 
         {% if i == 0 %}
         <div class="well well-lg" style="margin-top: 30px;">
-            <p class="text-center">There are currently no exams for this course</p>
+            <p class="text-center">There are currently no assessments for this course</p>
         </div>
         {% endif %}
         </div>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Exam View</title>
+    <title>Assessment View</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -154,7 +154,7 @@ pre {
             </div>
             <div class="col-md-4" style="text-align:right; ">
                 <button class="btn btn-primary" id="save">Save Progress</button>
-                <button class="btn btn-danger" id="submitBtn">Submit Exam</button>
+                <button class="btn btn-danger" id="submitBtn">Submit</button>
             </div>
         </div>
     </form>
@@ -325,7 +325,7 @@ pre {
         $('#submitBtn').click(function(){
             submitting = true;
             saveTextAreas();
-            if (confirm("Are you completely finished with the coding portion of the exam?  You may not return."))
+            if (confirm("Are you completely finished with this assessment?  You may not return."))
                 document.questionform.submit();
             else {
                 submitting = false;
@@ -336,7 +336,7 @@ pre {
 
         function unloadPage(e) {
             if (!submitting) {
-                var message = 'You may have unsaved changes on this exam.  Are you sure you want to leave the page?';
+                var message = 'You may have unsaved changes.  Are you sure you want to leave the page?';
                 var e = e || window.event;
                 // For IE and Firefox
                 if (e) { e.returnValue = message; }
@@ -358,7 +358,7 @@ pre {
                     <h4 class="modal-title">Choose a time-tracking system</h4>
                 </div>
                 <div class="modal-body">
-                    <p>You have {{data.info.time.left}} minutes allowed for this exam.  Please choose one of the following options so that we can help you keep track of your time.  The time will be displayed at the top of your exam.</p>
+                    <p>You have {{data.info.time.left}} minutes allowed for this assessment.  Please choose one of the following options so that we can help you keep track of your time.  The time will be displayed at the top of your window.</p>
                     <div class="row">
                         <div class="col-md-4" style="cursor: pointer; padding-left: 0px;">
                             <a class="list-group-item" onClick="return chooseTimer('hide-grayshades-down');">Count-down Bar (Gray only)

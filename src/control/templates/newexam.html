@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Exam</title>
+    <title>Edit Assessment</title>
 
 <!-- JQuery -->
 <script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -87,11 +87,11 @@ input[type="radio"] {
 
 <div class="container" role="main">
     {% if data.examdata.info.id %}
-    <h1>Edit Exam: {{data.uva_id}}:{{data.title}}</h1>
+    <h1>Edit: {{data.uva_id}}:{{data.title}}</h1>
     {% else %}
-    <h1>New Exam: {{data.uva_id}}:{{data.title}}</h1>
+    <h1>New: {{data.uva_id}}:{{data.title}}</h1>
     {% endif %}
-    <p>Fill out the form below to create a new exam.</p>
+    <p>Fill out the form below to create a new assessment.</p>
 
     <div class="row">
         <div class="col-md-12">
@@ -101,7 +101,7 @@ input[type="radio"] {
                 <input type="hidden" name="exam" value="{{data.examdata.info.id}}">
                 <div class="form-group">
                     <label for="name">Name</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Exam Name" value="{{data.examdata.info.title}}">
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Assessment Name" value="{{data.examdata.info.title}}">
                 </div>
                 <div class="form-group">
                     <label for="instructions">Instructions</label>
@@ -267,9 +267,9 @@ input[type="radio"] {
                 <button id="addquestion" class="btn btn-primary">Add Question</button>
                 &nbsp; 
                 {% if data.examdata.info.id %}
-                <button id="submit" type="submit" class="btn btn-default">Update Exam</button>
+                <button id="submit" type="submit" class="btn btn-default">Update</button>
                 {% else %}
-                <button id="submit" type="submit" class="btn btn-default">Create Exam</button>
+                <button id="submit" type="submit" class="btn btn-default">Create</button>
                 {% endif %}
             </form>
         </div>
