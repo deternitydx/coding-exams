@@ -82,6 +82,9 @@ body {
                         <div class="panel-heading" role="tab" id="heading{{i}}">
                             <div class="btn-group pull-right">
                                 {% if cdata.role == "Instructor" %}
+                                <a href="?c=course&course={{cdata.id}}" class='btn btn-sm btn-warning'>
+                                    <i class="fa fa-eye" aria-hidden="true"></i>
+                                    Course View</a>&nbsp;
                                 <a href="?c=add_participant&course={{cdata.id}}" class='btn btn-sm btn-info'>
                                     <i class="fa fa-user" aria-hidden="true"></i>
                                     Add Participant</a>&nbsp;
@@ -148,7 +151,28 @@ body {
                     </div>
                     {% set i = i + 1 %}
                 {% endfor %}
+                {% if j == 0 %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-info">
+            <div class="panel-heading" role="tab" id="archive">
+                <h4 class="panel-title">
+                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapsearch" aria-expanded="true" aria-controls="collapsearch">
+                        Previous Semesters
+                    </a>
+                </h4>
+            </div>
+            <div class="panel-collapse collapse" role="toppanel" aria-labelledby="archive" id="collapsearch">
+                <div class="panel-body">
+
+                {% endif %}
+                {% set j = j + 1 %}
             {% endfor %}
+                </div>
+            </div>
+            </div>
         </div>
     </div>
 </div>
