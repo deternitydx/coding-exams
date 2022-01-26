@@ -113,6 +113,12 @@ switch ($command) {
     case "report":
         echo $helper->showReport();
         break;
+    case "roster":
+        echo $helper->showRoster();
+        break;
+    case "update_roster":
+        echo $helper->updateRoster();
+        break;
     case "add_participant":
         echo $helper->showAddParticipant();
         break;

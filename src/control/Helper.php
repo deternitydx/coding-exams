@@ -1407,6 +1407,18 @@ class Helper {
         return $allowed;
     }
 
+    public function isInstructorCourse($userid, $courseid) {
+        $res = $this->db->query("select * from person_course
+            where course_id = $2 and person_id = $1 and
+                role in ('Instructor', 'Secondary Instructor')", 
+            [$userid, $courseid]);
+        $all = $this->db->fetchAll($res);
+        $allowed = false;
+        if (count($all) == 1)
+            $allowed = true;
+        return $allowed;
+    }
+
     /**
      * Load Results
      *
@@ -1679,6 +1691,21 @@ class Helper {
         }
 
         return $_FILES[$name]['tmp_name'];
+    }
+
+    public function showRoster($courseid = null) {
+        $cid = $courseid;
+        if ($courseid == null && !isset($this->input["c"]))
+            die($this->showError("Unknown Course"));
+
+        if ($courseid == null)
+            $cid = $this->input["c"];
+
+        if (!$this->isInstructorCourse($this->user["id"], $cid))
+            die($this->showError("You do not have permissions to view this roster"));
+
+        // read roster
+        // display roster 
     }
 
     public function showGrades($examid = null) {
