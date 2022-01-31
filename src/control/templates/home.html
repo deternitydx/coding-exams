@@ -80,14 +80,25 @@ body {
                 {% for course, cdata in ydata %}
                     <div class="panel panel-default">
                         <div class="panel-heading" role="tab" id="heading{{i}}">
-                            <div class="btn-group pull-right">
+                            <div class="pull-right">
+                            <div class="btn-group">
                                 {% if cdata.role == "Instructor" %}
-                                <a href="?c=course&course={{cdata.id}}" class='btn btn-sm btn-warning'>
-                                    <i class="fa fa-eye" aria-hidden="true"></i>
-                                    Course View</a>&nbsp;
-                                <a href="?c=add_participant&course={{cdata.id}}" class='btn btn-sm btn-info'>
-                                    <i class="fa fa-user" aria-hidden="true"></i>
-                                    Add Participant</a>&nbsp;
+                                <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa fa-cog" aria-hidden="true"></i>
+                                    Settings <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="?c=course&course={{cdata.id}}">
+                                    <i class="fa fa-fw fa-eye" aria-hidden="true"></i>
+                                    Course View</a></li>
+                                    <li><a href="?c=accommodation&course={{cdata.id}}">
+                                    <i class="fa fa-fw fa-clock-o" aria-hidden="true"></i>
+                                    Add Accommodation</a></li>
+                                    <li><a href="?c=add_participant&course={{cdata.id}}">
+                                    <i class="fa fa-fw fa-user" aria-hidden="true"></i>
+                                    Add Participants</a></li>
+                                </ul>
+                            </div>
                                 <a href="?c=new_exam&course={{cdata.id}}" class='btn btn-sm btn-success'>
                                     <i class="fa fa-plus" aria-hidden="true"></i>
                                     Create New Assessment</a>

@@ -197,6 +197,34 @@ class Helper {
         die($this->showError("Not Authorized"));
     }
 
+    
+    /**
+     * Show Add Accommodation Form 
+     *
+     * Loads the display with the add-accommodation form if the user is an instructor
+     * of the course.
+     *
+     * @return string HTML display data from the templating engine
+     */
+    public function showAddAccommodation() {
+        $data = $this->loadCourses();
+        $cid = $this->input["course"];
+        $course = null;
+        $allowed = false;
+        foreach ($data as $y) {
+            foreach ($y as $c) {
+                if ($c["id"] == $cid && $c["role"] == "Instructor") {
+                    $allowed = true;
+                    $course = $c;
+                }
+            }
+        }
+        if ($allowed) {
+            $this->dData = $course;
+            return $this->display("accommodation");
+        }
+        die($this->showError("Not Authorized"));
+    }
 
 
 
@@ -209,6 +237,7 @@ class Helper {
         }
         return $role;
     }
+    
     /**
      * Add participant to class 
      *
@@ -288,6 +317,70 @@ class Helper {
             $this->setMessage("$count participants add as $role");
 
             return $this->showAddParticipant();
+
+        }
+        die($this->showError("Not Authorized"));
+    }
+    
+    /**
+     * Add Accommodation 
+     *
+     * If the user is an instructor of the course, reads the input and adds the
+     * accommodation to the student in the course
+     *
+     * @return string HTML display data from the templating engine
+     */
+    public function addAccommodation() {
+        $data = $this->loadCourses();
+        $cid = $this->input["course"];
+        $course = null;
+        $allowed = false;
+        foreach ($data as $y) {
+            foreach ($y as $c) {
+                if ($c["id"] == $cid && $c["role"] == "Instructor") {
+                    $allowed = true;
+                    $course = $c;
+                }
+            }
+        }
+        if ($allowed) {
+            $this->dData = $course;
+
+            // input check
+            if (!isset($this->input["userid"]) || empty($this->input["userid"]) || !isset($this->input["time"]) || empty($this->input["time"])) {
+                $this->setError("No Participants Given");
+                die($this->showAddAccommodation());
+            }
+            if (!is_numeric($this->input["time"])) {
+                $this->setError("Timescale must be numeric");
+                die($this->showAddAccommodation());
+            }
+
+            $studentid = $this->input["userid"];
+            $time = $this->input["time"];
+            
+            // See if the person already exists from another class
+            $resP = $this->db->query("select p.id from person p, person_course pc where p.uva_id = $1 and p.id = pc.person_id and pc.course_id = $2", [
+                $studentid, $course["id"]
+            ]);
+            $allP = $this->db->fetchAll($resP);
+
+            // If person doesn't exist in the course, return error
+            if (!(isset($allP[0]) && isset($allP[0]["id"]))) {
+                $this->setError("Student was not found");
+                die($this->showAddAccommodation());
+            }
+            
+            $pid = $allP[0]["id"];
+            $resPC = $this->db->query("update person_course set time_scale = $3 where course_id = $1 and person_id = $2;", [
+                $course["id"],
+                $pid,
+                $time
+            ]);
+
+            $this->setMessage("Accommodation updated to $time for $studentid");
+
+            return $this->showAddAccommodation();
 
         }
         die($this->showError("Not Authorized"));

@@ -119,6 +119,12 @@ switch ($command) {
     case "add_participant_post":
         echo $helper->addParticipant();
         break;
+    case "accommodation":
+        echo $helper->showAddAccommodation();
+        break;
+    case "accommodation_post":
+        echo $helper->addAccommodation();
+        break;
     case "full_report":
         echo $helper->showGrades();
         break;

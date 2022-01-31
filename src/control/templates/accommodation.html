@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Accommodation</title>
+
+<!-- JQuery -->
+<script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+
+<!-- Helper Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.5/js/bootstrap-select.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.5/css/bootstrap-select.min.css">
+
+<!-- Select Upgrades -->
+<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.2-rc.1/css/select2.min.css" rel="stylesheet" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.2-rc.1/js/select2.min.js"></script>
+<link rel="stylesheet" href="css/select2-bootstrap.min.css">
+
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="js/codemirror/lib/codemirror.css">
+<script src="js/codemirror/lib/codemirror.js"></script>
+<script src="js/codemirror/addon/edit/matchbrackets.js"></script>
+<link rel="stylesheet" href="js/codemirror/addon/hint/show-hint.css">
+<script src="js/codemirror/addon/hint/show-hint.js"></script>
+<script src="js/codemirror/mode/python/python.js"></script>
+<script src="js/codemirror/mode/markdown/markdown.js"></script>
+<script src="js/clike.js"></script>
+
+<link href="//cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.css" rel="stylesheet">
+<script src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.js"></script>
+
+
+<meta charset="utf-8"/>
+<style>
+.CodeMirror {
+    height: 500px;
+        border: 1px solid #000;
+}
+body {
+    margin-top: 70px;
+    margin-bottom: 70px;
+}
+textarea {
+    width: 100%;
+}
+.question-group .form-group {
+    margin-left: 20px;
+        margin-right: 20px;
+}
+
+.note-frame {
+    margin-bottom: 2px;
+}
+
+.form-help {
+    margin-top 0px;
+    padding-top: 2px;
+        color: #555;
+    font-style:italic;
+        text-align: right;
+}
+</style>
+</head>
+
+<body role="document">
+{% from 'page_navigation.html' import topNavigation,footer,showalert %}
+{{ topNavigation(user) }}
+
+<div class="container" role="main">
+    <h1>Add Accommodation: {{data.uva_id}}:{{data.title}}</h1>
+    <p>Add accommodations by including the computing ID and timescale modification (i.e., 1.5 or 2.0).</p>
+
+    {{ showalert(messages) }}
+
+    <div class="row">
+        <div class="col-md-12">
+
+            <form method="POST" action="?c=accommodation_post">
+                <input type="hidden" name="course" value="{{data.id}}">
+                <div class="form-group">
+                    <label for="userid">Computing ID</label>
+                    <input name="userid" type="text" placeholder="mst3k" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="time">Timescale Modification</label>
+                    <input name="time" type="text" placeholder="ex: 1.5, 1.75, 2.0" class="form-control">
+                </div>
+                <div class="form-group">
+                    <button id="submit" type="submit" class="btn btn-default">Add Accommodation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{ footer() }}
+</body>
+</html>
+
+
