@@ -85,7 +85,7 @@ class Helper {
         $this->dData = array();
         $this->db = new \manager\control\DatabaseConnector();
         if (!isset($_SERVER["uid"])) {
-            die(); // update soon
+            die("This is not the server you are looking for"); // update soon
         }
         $this->user = $this->readUser($_SERVER["uid"]);
         if ($this->user == null)
@@ -1545,10 +1545,13 @@ class Helper {
                 "available" => false
             ];
 
+            // Make timezone dependent to EST/EDT
+            $curtime = strtotime(date("Y-m-d H:i:s"));
+
             if ($row["closed"] != 't' && (($row["open"] == "" && $row["close"] == "") ||
                 ($row["open"] == null && $row["close"] == null) ||
                 ($row["open"] != "" && $row["open"] != null && $row["close"] != "" && $row["close"] != null
-                    && $row["open"] <= time() && $row["close"] >= time()))) {
+                    && $row["open"] <= $curtime && $row["close"] >= $curtime))) {
                 $exams[$row["year"] . " - " . $row["semester"]][$row["courseid"]]["exams"][$row["id"]]["available"] = true;  
             }
 
@@ -2033,9 +2036,9 @@ class Helper {
              
             foreach ($results["questions"][$question["id"]]["answers"] as $pid => $answer) {
                 $score = 0;
-                print_r($answer);
+                //print_r($answer);
 
-                print_r($question);
+                //print_r($question);
                 if ($answer["response"] == $question["correct"]) {
                     $score = $question["score"];
                 }
@@ -2501,8 +2504,8 @@ class Helper {
                 2 => array("pipe", "a")
             );
             $pipes = array();
-            $process = proc_open("cd $tmpDir && pandoc -f html -o $tmpFile --pdf-engine=wkhtmltopdf 2>&1", $descriptorspec, $pipes);
-
+            //$process = proc_open("cd $tmpDir && pandoc -f html -o $tmpFile -t html 2>&1", $descriptorspec, $pipes);
+            $process = proc_open("cd $tmpDir && pandoc2 -f html -o $tmpFile --pdf-engine=wkhtmltopdf 2>&1", $descriptorspec, $pipes);
             if (is_resource($process)) {
                 // $pipes now looks like this:
                 // 0 => writeable handle connected to child stdin
@@ -2542,7 +2545,7 @@ class Helper {
             if ($fileCreated) 
                 $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", "<p>See attached PDF</p>");
             else
-                $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $response);
+                $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $fullhtml);
 
             $zip->addFromString("$uzdir/comments.txt", $comments);
         }
