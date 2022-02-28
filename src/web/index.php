@@ -104,6 +104,9 @@ switch ($command) {
     case "grade_checkin":
         echo $helper->checkinAllUngraded();
         break;
+    case "grade_submitall":
+        echo $helper->submitAll();
+        break;
     case "save_grade_next":
         echo $helper->saveNextGrade();
         break;

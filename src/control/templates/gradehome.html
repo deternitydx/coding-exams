@@ -109,12 +109,15 @@ textarea {
             <h2>Grading
                     <div class="btn-group pull-right">
                         {% if user.course_role == 'Instructor' %}  
+                        <a class="btn btn-warning btn-sm" href="?c=grade_submitall&e={{data.info.id}}">
+                            <i class="fa fa-arrow-circle-down" aria-hidden="true"></i> Submit Open Assessments
+                        </a>
                         <a class="btn btn-success btn-sm" href="?c=autograde_mc&e={{data.info.id}}">
                             <i class="fa fa-magic" aria-hidden="true"></i> Autograde Multiple Choice
                         </a>
-                        <a class="btn btn-success btn-sm" href="?c=autograde_junit&e={{data.info.id}}">
+                        <!--<a class="btn btn-success btn-sm" href="?c=autograde_junit&e={{data.info.id}}">
                             <i class="fa fa-magic" aria-hidden="true"></i> Autograde Java Code
-                        </a>
+                        </a>-->
                         {% endif %}
                     </div></h2>
             {% set i = 1 %}

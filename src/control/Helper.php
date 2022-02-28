@@ -865,6 +865,8 @@ class Helper {
                 $this->dData["message"] = "There are no more of that question to grade.";
             else if ($m == "checkin")
                 $this->dData["message"] = "Ungraded questions checked in.";
+            else if ($m == "submitall")
+                $this->dData["message"] = "Any unsubmitted assessments have been submitted.";
         }
 
         return $this->display("gradehome");
@@ -1123,6 +1125,47 @@ class Helper {
             [$eid, $this->input['q']]);
 
         header("Location: ?c=grade&e=".$this->input['e']."&m=checkin");
+    }
+    
+    /**
+     * Submit all un-submitted assessments 
+     *
+     * Submit all exams for students who have not completed their assessment.  This ensures
+     * that they can all be appropriately graded.
+     *
+     * @return string HTML display data from the templating engine
+     */
+    public function submitAll() {
+        $eid = $this->input["e"];
+        $res = $this->db->query("select 
+            e.id, e.date, e.open, e.close, e.title from course c, exam e, person_course pc 
+            where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
+                pc.role in ('Instructor')
+                and e.id = $2", 
+            [$this->user["id"], $eid]);
+        $all = $this->db->fetchAll($res);
+        $allowed = false;
+        foreach ($all as $row) {
+            if ($row["id"] == $eid) {
+                $allowed = true;
+                $examInfo = $row;
+                break;
+            }
+        }
+        
+        if (!$allowed)
+            die($this->showError("You do not have permissions to grade this exam"));
+
+        $res = $this->db->query("update person_question pq set submitted = 't' 
+            where exam_id = $1 and not submitted;",  
+            [$eid]);
+        
+        $res = $this->db->query("update person_exam set date_taken = now() 
+            where exam_id = $1 and date_taken is null;",  
+            [$eid]);
+
+
+        header("Location: ?c=grade&e=".$this->input['e']."&m=submitall");
     }
 
     /**
