@@ -802,6 +802,10 @@ class Helper {
             $res = $this->db->query("update person_exam set timer_method = $3 where person_id = $1 and exam_id = $2;",
                 [$this->user["id"], $this->input["e"], $this->input["timermethod"]]);
         }
+        if ($exam["info"]["timer_method"] == 'study2' && isset($this->input["timermethod"]) && !empty($this->input["timermethod"])) {
+            $res = $this->db->query("update person_exam set timer_method = $3 where person_id = $1 and exam_id = $2;",
+                [$this->user["id"], $this->input["e"], $this->input["timermethod"]]);
+        }
 
         $left = "inf";
         if (isset($exam["info"]["date_started"]) && isset($exam["info"]["time_allowed"]) &&
@@ -1372,7 +1376,7 @@ class Helper {
             // The student has started the exam -- check conditions
             $info = $all[0];
             $exam["info"]["date_started"] = $info["date_started"];
-            if (($exam["info"]["timer_method"] == "choice" || $exam["info"]["timer_method"] == "study") && $info["timer_method"] != null)
+            if (($exam["info"]["timer_method"] == "choice" || $exam["info"]["timer_method"] == "study" || $exam["info"]["timer_method"] == "study2" || $exam["info"]["timer_method"] == "study3") && $info["timer_method"] != null)
                 $exam["info"]["timer_method"] = $info["timer_method"];
 
             /*if (($exam["info"]["timer_method"] == "study") && $info["timer_method"] == null) {
@@ -1403,7 +1407,18 @@ class Helper {
             // If there is an ongoing research study, make the choice 
             // study if this is the first ime the exam was opened
             if ($exam["info"]["timer_method"] == "study") {
-                $studyOptions = ["green-down", "text-down"];
+                $studyOptions = ["text-down", "hide-grayshades-down"];
+                $studyKey = array_rand($studyOptions, 1);
+                $exam["info"]["timer_method"] = $studyOptions[$studyKey];
+                $resStudy = $this->db->query("update person_exam set timer_method = $3 where person_id = $1 and exam_id = $2;",
+                    [$this->user["id"], $eid, $exam["info"]["timer_method"]]);
+                if ($this->user["id"] == 1) {
+                    $this->logger->addDebug("Test2", [$exam, $eid, $this->user["id"]]);
+                }
+
+            }
+            if ($exam["info"]["timer_method"] == "study3") {
+                $studyOptions = ["hide-grayshades-up", "hide-grayshades-down"];
                 $studyKey = array_rand($studyOptions, 1);
                 $exam["info"]["timer_method"] = $studyOptions[$studyKey];
                 $resStudy = $this->db->query("update person_exam set timer_method = $3 where person_id = $1 and exam_id = $2;",

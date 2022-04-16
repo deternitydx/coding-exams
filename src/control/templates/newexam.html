@@ -192,6 +192,16 @@ input[type="radio"] {
                         <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="study" {{data.examdata.info.timer_method == 'study' ? 'checked'}}> Current Study Method
                         </label>
                     </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="study2" {{data.examdata.info.timer_method == 'study2' ? 'checked'}}> Current Study Method 2 (choice)
+                        </label>
+                    </div>
+                    <div class="radio">
+                        <label>
+                        <input type="radio" data-toggle="toggle" data-on="" data-onstyle="success" name="timermethod" value="study3" {{data.examdata.info.timer_method == 'study3' ? 'checked'}}> Current Study Method 3 (CS3710)
+                        </label>
+                    </div>
                 </div>
                 {% if data.examdata.info.questions %}
                 {% for question in data.examdata.info.questions %}

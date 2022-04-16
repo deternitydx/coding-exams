@@ -154,7 +154,7 @@ function chooseTimer(choice) {
 } 
        
 $(document).ready(function() {
-        if (timer_method != null && timer_method != 'choice') {
+        if (timer_method != null && timer_method != 'choice' && timer_method != 'study2') {
             var timertimeout = setInterval(timer, 60000); // update every minute
             updateTimerInfo(); // run on page load
         }

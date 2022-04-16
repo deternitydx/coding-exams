@@ -440,5 +440,48 @@ pre {
         });
     </script>
 {% endif %}
+{% if data.info.timer_method == 'study2' %}
+    <div class="modal fade" id="timerchoice" tabindex="-1" role="dialog" data-backdrop='static' data-show='true'>
+        <div class="modal-dialog" style="width: 75%" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Choose a time-tracking system</h4>
+                </div>
+                <div class="modal-body">
+                    <p>You have {{data.info.time.left}} minutes allowed for this assessment.  Please choose one of the following options so that we can help you keep track of your time.  The time will be displayed at the top of your window.</p>
+                    <div class="row">
+                        <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
+                        </div>
+                        <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
+                            <a class="list-group-item" onClick="return chooseTimer('text-down');">Count-down Text 
+                                <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <span style="color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                                </p>
+                            </a>
+                            <a class="list-group-item" onClick="return chooseTimer('hide-grayshades-down');">Count-down Bar (Gray only)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-grayone" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
+                        </div>
+                    </div>
+                </div>
+                <!--<div class="modal-footer">
+                    <button type="button" class="btn btn-primary">Begin</button>
+                </div>-->
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <script>
+        $(document).ready(function(){
+            $("#timerchoice").modal('show');
+        });
+    </script>
+{% endif %}
 </body>
 </html>
