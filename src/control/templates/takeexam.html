@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="css/select2-bootstrap.min.css">
 
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="css/weather-icons.min.css">
 <link rel="stylesheet" href="css/timers.css">
 
 <link rel="stylesheet" href="js/codemirror/lib/codemirror.css">
@@ -90,6 +91,9 @@ pre {
                             </div>
                             <span id="timertext" style="position:absolute; right:0; left:0;color:#333; font-size: 12px; margin-top: 2px;"></span>
                         </div>
+                    </li>
+                        <p id="timericon" class="navbar-text" style="margin-top: 5px; margin-bottom: 0px; font-size: 2em"></p>
+                    <li>
                     </li>
                     <li>
                         <a id="toggletimer" href="#">Hide/Show Timer</a>
@@ -300,12 +304,14 @@ pre {
                 $('#timer').css('visibility', 'hidden');
                 $('#timerbar').css('visibility', 'hidden');
                 $('#timertext').css('visibility', 'hidden');
+                $('#timericon').css('visibility', 'hidden');
                 $('#toggletimer').text("Hide/Show Timer");
             } else {
                 $('#timer_hidden').val("false");
                 $('#timer').css('visibility', 'visible');
                 $('#timerbar').css('visibility', 'visible');
                 $('#timertext').css('visibility', 'visible');
+                $('#timericon').css('visibility', 'visible');
                 $('#toggletimer').text("Hide/Show Timer");
             }
             return false;
@@ -453,17 +459,22 @@ pre {
                         <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
                         </div>
                         <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
-                            <a class="list-group-item" onClick="return chooseTimer('text-down');">Count-down Text 
+                            <a class="list-group-item" onClick="return chooseTimer('text-down');">Count-down Text Only
                                 <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
                                     <span style="color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
                                 </p>
                             </a>
-                            <a class="list-group-item" onClick="return chooseTimer('hide-grayshades-down');">Count-down Bar (Gray only)
-                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
-                                    <div class="progress-bar progress-bar-grayone" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
-                                    </div>
-                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
-                                </div>
+                            <a class="list-group-item" onClick="return chooseTimer('moon-down');">Count-down Text with Moon Phase Animation
+                                <table style="border: 0px; margin-top: 10px; margin-left: auto; margin-right:auto;">
+                                    <tr>
+                                        <td style="text-align: right">
+                                        <span style="color:#333; line-height:2em; font-size: 12px; padding-right: 10px;"><i>x</i> minutes remaining</span>                                    </div>
+                                            </td>
+                                            <td>
+                                        <span style="font-size: 20px;"><i class="wi wi-moon-alt-waning-gibbous-4"></i></span>
+                                            </td>
+                                    </tr>
+                                </table>
                             </a>
                         </div>
                         <div class="col-md-4" style="cursor: pointer; padding-right:0px;">

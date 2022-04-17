@@ -16,6 +16,9 @@
                 } else if (timer_method == 'text-down') {
                     $('#timer').css('visibility', 'visible');
                     $('#timertext').css('font-size', 'inherit').css('color', '#9d9d9d');
+                } else if (timer_method == 'moon-down') {
+                    $('#timer').css('visibility', 'visible');
+                    $('#timertext').css('font-size', 'inherit').css('color', '#9d9d9d').css('text-align', 'right').css('margin-top', '0px');
                 } else if (timer_method == 'text-up') {
                     $('#timer').css('visibility', 'visible');
                     $('#timertext').css('font-size', 'inherit').css('color', '#9d9d9d');
@@ -48,7 +51,7 @@
                 }
             }
 
-            if (timer_method == 'bar-down' || timer_method == 'text-down' || timer_method == "stoplight" || timer_method == "grayshades" || timer_method == "hide-stoplight" || timer_method == "hide-grayshades-down" || timer_method == "green-down" || timer_method == "hide-stoplight-down") {
+            if (timer_method == 'bar-down' || timer_method == 'moon-down' || timer_method == 'text-down' || timer_method == "stoplight" || timer_method == "grayshades" || timer_method == "hide-stoplight" || timer_method == "hide-grayshades-down" || timer_method == "green-down" || timer_method == "hide-stoplight-down") {
                     $('#timerbar').css('width', percleft+'%').attr('aria-valuenow',percleft);
                     $('#timertext').text(timeleft + " minutes remaining");
             } else if (timer_method == 'bar-up' || timer_method == 'text-up' || timer_method == "hide-grayshades-up" || timer_method == "green-up" || timer_method == "hide-stoplight-up") {
@@ -124,6 +127,43 @@
                         $('#timertext').css('color', '#fcfcfc');
                     }
                 }
+            }
+
+            // Moon timer
+            if (timer_method == "moon-down") {
+                var phase = "wi-moon-alt-full";
+                if (percleft >= 94) {
+                    phase = "wi-moon-alt-new";
+                } else if (percleft >= 88) {
+                    phase = "wi-moon-alt-waning-crescent-6";
+                } else if (percleft >= 81) {
+                    phase = "wi-moon-alt-waning-crescent-5";
+                } else if (percleft >= 75) {
+                    phase = "wi-moon-alt-waning-crescent-4";
+                } else if (percleft >= 69) {
+                    phase = "wi-moon-alt-waning-crescent-3";
+                } else if (percleft >= 62) {
+                    phase = "wi-moon-alt-waning-crescent-2";
+                } else if (percleft >= 56) {
+                    phase = "wi-moon-alt-waning-crescent-1";
+                } else if (percleft >= 48) {
+                    phase = "wi-moon-alt-third-quarter";
+                } else if (percleft >= 42) {
+                    phase = "wi-moon-alt-waning-gibbous-6";
+                } else if (percleft >= 36) {
+                    phase = "wi-moon-alt-waning-gibbous-5";
+                } else if (percleft >= 29) {
+                    phase = "wi-moon-alt-waning-gibbous-4";
+                } else if (percleft >= 23) {
+                    phase = "wi-moon-alt-waning-gibbous-3";
+                } else if (percleft >= 17) {
+                    phase = "wi-moon-alt-waning-gibbous-2";
+                } else if (percleft >= 10) {
+                    phase = "wi-moon-alt-waning-gibbous-1";
+                }
+
+                // Todo update phase
+                $('#timericon').html("<i class='wi " + phase + "'></i>");
             }
         }
 
