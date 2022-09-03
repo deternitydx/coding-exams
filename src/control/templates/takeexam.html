@@ -139,6 +139,13 @@ pre {
                 <textarea name="response[{{i}}]" class="la-{{question.language}}" style="width: 100%; height: 100%;">{{question.code}}</textarea>
             </div>
             {% endif %}
+
+            {% if question.language != 'noanswer' and data.allowcomments %}
+            <div style="margin-left: 10%; margin-right: 10%; width: 80%; border: 1px solid #777; background-color: #fefefe; padding: 10px; margin-bottom: 40px;">
+                <h6>Comments (Optional)</h6>
+                <textarea name="comment[{{i}}]" style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; border: 1px solid #888;">{{question.comment}}</textarea>
+            </div>
+            {% endif %}
             {% set i = i + 1 %}
         {% endfor %}
         <div class="row" style="margin-left:auto; margin-right: auto; width: 100%; height: 80%; margin-top: 10px; margin-bottom: 30px;">
@@ -459,10 +466,12 @@ pre {
                         <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
                         </div>
                         <div class="col-md-4" style="cursor: pointer; padding-right:0px;">
-                            <a class="list-group-item" onClick="return chooseTimer('text-down');">Count-down Text Only
-                                <p style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
-                                    <span style="color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
-                                </p>
+                            <a class="list-group-item" onClick="return chooseTimer('hide-stoplight-down');">Count-down Bar (Green, Yellow, then Red)
+                                <div class="progress" style="margin-top: 10px; margin-left: auto; margin-right: auto; width: 200px; text-align: center;">
+                                    <div class="progress-bar progress-bar-success" id="timerbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 75%"> 
+                                    </div>
+                                    <span style="position:absolute; right:0; left:0;color:#333; line-height:2em; font-size: 12px;"><i>x</i> minutes remaining</span>
+                                </div>
                             </a>
                             <a class="list-group-item" onClick="return chooseTimer('moon-down');">Count-down Text with Moon Phase Animation
                                 <table style="border: 0px; margin-top: 10px; margin-left: auto; margin-right:auto;">

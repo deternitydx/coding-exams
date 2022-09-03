@@ -208,6 +208,12 @@ input[type="radio"] {
                         </label>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="allowcomments">Allow Comments</label><br>
+                        <input type="checkbox" data-toggle="toggle" data-on="Comments" data-off="No Comments"  data-onstyle="success" name="allowcomments" value="t" {{data.examdata.info.allow_comments == 't' ? 'checked'}}>
+                    </div>
+                </div>
                 {% if data.examdata.info.questions %}
                 {% for question in data.examdata.info.questions %}
                 <div class="question-group panel panel-primary">

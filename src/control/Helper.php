@@ -488,6 +488,11 @@ class Helper {
             $timeallowed = $this->input["timeallowed"];
         }
 
+        $allowcomments = 'f';
+        if (isset($this->input["allowcomments"]) && $this->input["allowcomments"] == 't') {
+            $allowcomments = 't';
+        }
+
         $timeenforced = 'f';
         if (isset($this->input["timeenforced"]) && $this->input["timeenforced"] == 't') {
             $timeenforced = 't';
@@ -520,7 +525,7 @@ class Helper {
 
         // create the exam
         if (!isset($this->input["exam"]) || empty($this->input["exam"])) {
-            $res = $this->db->query("insert into exam (course_id, title, instructions, time_allowed, time_enforced, timer_method, open, close) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id;", array(
+            $res = $this->db->query("insert into exam (course_id, title, instructions, time_allowed, time_enforced, timer_method, open, close, allow_comments) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id;", array(
                 $course["id"],
                 $this->input["name"],
                 $this->input["instructions"],
@@ -528,10 +533,11 @@ class Helper {
                 $timeenforced,
                 $timermethod,
                 $open,
-                $close
+                $close,
+                $allowcomments
             ));
         } else {
-            $res = $this->db->query("update exam set (title, instructions, time_allowed, time_enforced, timer_method, open, close) = ($3, $4, $5, $6, $7, $8, $9) where course_id = $1 and id = $2 returning id;", array(
+            $res = $this->db->query("update exam set (title, instructions, time_allowed, time_enforced, timer_method, open, close, allow_comments) = ($3, $4, $5, $6, $7, $8, $9, $10) where course_id = $1 and id = $2 returning id;", array(
                 $course["id"],
                 $this->input["exam"],
                 $this->input["name"],
@@ -540,7 +546,8 @@ class Helper {
                 $timeenforced,
                 $timermethod,
                 $open,
-                $close
+                $close,
+                $allowcomments
             ));
         }
         $tmp = $this->db->fetchAll($res);
@@ -788,13 +795,16 @@ class Helper {
             if (!isset($this->input["response"][$k]))
                 $this->input["response"][$k] = "";
 
+            if (!isset($this->input["comment"][$k]))
+                $this->input["comment"][$k] = "";
+
             // If student already has written a partial response, then replace
             if (isset($all[0]) && isset($all[0]["response"])) {
-                $res = $this->db->query("update person_question set response = $4 where person_id = $1 and question_id = $2 and exam_id = $3;",
-                    [$this->user["id"], $q, $this->input["e"], $this->input["response"][$k]]);
+                $res = $this->db->query("update person_question set response = $4 , comment = $5 where person_id = $1 and question_id = $2 and exam_id = $3;",
+                    [$this->user["id"], $q, $this->input["e"], $this->input["response"][$k], $this->input["comment"][$k]]);
             } else {
-                $res = $this->db->query("insert into person_question (person_id, question_id, exam_id, response) values ($1, $2, $3, $4);",
-                    [$this->user["id"], $q, $this->input["e"], $this->input["response"][$k]]);
+                $res = $this->db->query("insert into person_question (person_id, question_id, exam_id, response, comment) values ($1, $2, $3, $4, $5);",
+                    [$this->user["id"], $q, $this->input["e"], $this->input["response"][$k], $this->input["comment"][$k]]);
             }
         }
 
@@ -848,6 +858,7 @@ class Helper {
             [$this->user["id"], $this->input["e"]]);
 
         $this->dData["code"] = $code;
+        $this->dData["assessid"] = $this->input["e"];
         return $this->display("submitsuccess");
     }
 
@@ -1336,7 +1347,7 @@ class Helper {
             $eid = $this->input["e"];
 
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.closed, e.time_allowed, e.time_enforced, e.timer_method, pc.time_scale from course c, exam e, person_course pc 
+            e.id, e.date, e.open, e.close, e.closed, e.time_allowed, e.time_enforced, e.timer_method, pc.time_scale, e.allow_comments from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and e.id = $2;", [$this->user["id"], $eid]);
         $all = $this->db->fetchAll($res);
         $allowed = false;
@@ -1407,7 +1418,7 @@ class Helper {
             // If there is an ongoing research study, make the choice 
             // study if this is the first ime the exam was opened
             if ($exam["info"]["timer_method"] == "study") {
-                $studyOptions = ["text-down", "moon-down"];
+                $studyOptions = ["hide-stoplight-down", "moon-down"];
                 $studyKey = array_rand($studyOptions, 1);
                 $exam["info"]["timer_method"] = $studyOptions[$studyKey];
                 $resStudy = $this->db->query("update person_exam set timer_method = $3 where person_id = $1 and exam_id = $2;",
@@ -1451,7 +1462,7 @@ class Helper {
         }
 
         
-        $res = $this->db->query("select e.id as exam_id, e.title, e.instructions, e.open, e.close, e.date, q.* from exam e, question q where e.id = $1 and q.exam_id = e.id order by q.ordering asc", [$eid]);
+        $res = $this->db->query("select e.id as exam_id, e.title, e.instructions, e.open, e.close, e.date, e.allow_comments, q.* from exam e, question q where e.id = $1 and q.exam_id = e.id order by q.ordering asc", [$eid]);
         $all = $this->db->fetchAll($res);
 
         foreach ($all as $row) {
@@ -1461,6 +1472,7 @@ class Helper {
             $exam["open"] = $row["open"];
             $exam["close"] = $row["close"];
             $exam["date"] = $row["date"];
+            $exam["allowcomments"] = $row["allow_comments"] == 't' ? true : false;
             if (!isset($exam["questions"]))
                 $exam["questions"] = [];
             $exam["questions"][$row["ordering"]] = [
@@ -1476,13 +1488,17 @@ class Helper {
                 $exam["questions"][$row["ordering"]]["code"] = "";
             }
 
-            $res2 = $this->db->query("select pq.response from person_question pq where pq.person_id = $1
+            $res2 = $this->db->query("select pq.response, pq.comment  from person_question pq where pq.person_id = $1
                 and pq.question_id = $2 and pq.exam_id = $3;", [$this->user["id"], $row["id"], $row["exam_id"]]);
             $all2 = $this->db->fetchAll($res2);
 
             // If student already has written a partial response, then replace the original
             if (isset($all2[0]) && isset($all2[0]["response"])) {
                 $exam["questions"][$row["ordering"]]["code"] = $all2[0]["response"];
+            }
+            // If student already has written a partial comment, then add it in 
+            if (isset($all2[0]) && isset($all2[0]["comment"])) {
+                $exam["questions"][$row["ordering"]]["comment"] = $all2[0]["comment"];
             }
         }
         
@@ -1617,7 +1633,7 @@ class Helper {
             $eid = $this->input["e"];
         
         $res = $this->db->query("select 
-            e.id, e.date, e.open, e.close, e.title, e.instructions, e.time_enforced, e.time_allowed, e.timer_method, pc.role 
+            e.id, e.date, e.open, e.close, e.title, e.instructions, e.time_enforced, e.time_allowed, e.timer_method, e.allow_comments, pc.role 
             from course c, exam e, person_course pc 
             where e.course_id = c.id and pc.course_id = c.id and pc.person_id = $1 and
                 pc.role in ('Instructor', 'Teaching Assistant', 'Secondary Instructor')
@@ -2547,6 +2563,9 @@ class Helper {
                 //$zip->addFile($tmpFile, "$uzdir/Submission attachment(s)/Submission.pdf");
                 $zip->addFile($tmpFile, "$uzdir/Feedback Attachment(s)/Submission.pdf");
                 //unlink($tmpFile);
+            } else {
+                $zip->addFromString("$uzdir/Feedback Attachment(s)/Submission.html", $fullhtml);
+                $fileCreated = true;
             }
 
             /*
@@ -2558,7 +2577,7 @@ class Helper {
             //file_put_contents("$udir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $response);
             //file_put_contents("$udir/comments.txt", $comments);
             if ($fileCreated) 
-                $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", "<p>See attached PDF</p>");
+                $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", "<p>See feedback file</p>");
             else
                 $zip->addFromString("$uzdir/{$exam["name"]}({$exam["uva_id"]})_submissionText.html", $fullhtml);
 
